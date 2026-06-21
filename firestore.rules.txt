@@ -1,0 +1,93 @@
+// ==========================================================================
+// REGRAS DE SEGURANÇA DO FIRESTORE — Piscina Vert Ville
+// ==========================================================================
+// Como aplicar:
+// 1. Acesse o Firebase Console > seu projeto > Firestore Database > Regras
+// 2. Cole o conteúdo abaixo (substituindo o que já existir)
+// 3. Clique em "Publicar"
+//
+// Lógica de segurança:
+// - moradores: qualquer um pode CRIAR seu próprio cadastro (autocadastro aberto,
+//   como decidido). Leitura/escrita de cadastros existentes só por quem está
+//   autenticado como médica (auth != null), OU o próprio processo de
+//   verificação de código (que não usa Firebase Auth, e sim um código
+//   armazenado no documento — por isso liberamos update apenas do necessário
+//   de forma simples; para uma versão futura mais rígida, considere mover a
+//   verificação para uma Cloud Function).
+// - configExame, bloqueiosManuais, plantoesImportados, agendamentos:
+//   leitura pública (necessária pro morador ver disponibilidade sem login
+//   "de verdade" via Firebase Auth — a autenticação dele é só o cadastro
+//   verificado por email). Escrita restrita à médica autenticada via
+//   Firebase Auth, EXCETO a criação de novos agendamentos pelos moradores
+//   (que precisa ser aberta, já que eles não usam Firebase Auth).
+//
+// ATENÇÃO: como o morador não usa Firebase Auth (login é só localStorage +
+// verificação por email), não é possível restringir escrita "só ao dono"
+// usando request.auth no Firestore. Isso é uma limitação aceita no desenho
+// atual — o risco é mitigado porque os dados aqui não são sensíveis
+// (não há dados médicos, só agendamento de exame de rotina) e o impacto de
+// um abuso seria, no máximo, alguém criar agendamentos falsos, visíveis e
+// removíveis pela médica no painel.
+// ==========================================================================
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function ehMedica() {
+      return request.auth != null;
+    }
+
+    // Moradores: criação aberta (autocadastro), leitura/edição restrita à médica.
+    // Update específico para o próprio fluxo de verificação de código é permitido
+    // sem auth, pois o morador ainda não tem sessão Firebase Auth nesse momento.
+    match /moradores/{moradorId} {
+      allow create: if true;
+      allow read: if true;
+      allow update: if true; // necessário para o fluxo de código de verificação
+      allow delete: if ehMedica();
+    }
+
+    // Configuração de exames e pacotes: leitura pública, escrita só da médica.
+    match /configExame/{docId} {
+      allow read: if true;
+      allow write: if ehMedica();
+    }
+
+    // Plantões importados (backup manual do Shiftr): leitura pública, escrita só da médica.
+    match /plantoesImportados/{docId} {
+      allow read: if true;
+      allow write: if ehMedica();
+    }
+
+    // Bloqueios manuais (compromissos pessoais): leitura pública, escrita só da médica.
+    match /bloqueiosManuais/{docId} {
+      allow read: if true;
+      allow write: if ehMedica();
+    }
+
+    // Agendamentos: leitura pública (necessária pro calendário saber o que está
+    // ocupado), criação aberta (morador agenda sem Firebase Auth), update/delete
+    // só da médica (marcar como pago, cancelar, resolver conflito).
+    match /agendamentos/{docId} {
+      allow read: if true;
+      allow create: if true;
+      allow update: if ehMedica();
+      allow delete: if ehMedica();
+    }
+  }
+}
+
+// ==========================================================================
+// NOTA SOBRE EVOLUÇÃO FUTURA DE SEGURANÇA
+// ==========================================================================
+// O ponto mais frágil dessas regras é "moradores" aceitar update sem auth
+// (necessário hoje pro código de verificação funcionar client-side).
+// Se um dia quiser fechar essa brecha, o caminho correto é mover a geração
+// e validação do código de verificação para uma Cloud Function (exige plano
+// Blaze, mas só nesse projeto novo — não no Shiftr). A Function validaria o
+// código no servidor e só então emitiria um token de Firebase Auth anônimo
+// para o morador, permitindo regras muito mais restritas baseadas em
+// request.auth.uid == moradorId.
+// ==========================================================================

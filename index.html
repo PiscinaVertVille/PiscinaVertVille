@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0B3D43" />
+  <title>Piscina Vért Ville — Agendar exame</title>
+  <meta name="description" content="Agende o exame de piscina do Condomínio Vért Ville." />
+
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link rel="icon" href="icons/icon-192.png" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+
+    <!-- ============ TELA: CADASTRO ============ -->
+    <main class="tela ativa" id="tela-cadastro">
+      <div class="topo">
+        <div class="topo-marca">
+          <span class="gota"></span>
+          <span>VÉRT VILLE</span>
+        </div>
+        <h1>Exame de piscina</h1>
+        <p class="texto-secundario">Agende com a Dra. — rápido, online, sem complicação.</p>
+      </div>
+
+      <div class="conteudo">
+        <div class="card">
+          <h2>Seu cadastro</h2>
+          <p class="texto-secundario" style="margin-top:4px; margin-bottom:16px;">
+            Só precisamos de alguns dados pra confirmar quem é você.
+          </p>
+
+          <form id="form-cadastro">
+            <div class="campo">
+              <label for="input-nome">Nome completo</label>
+              <input type="text" id="input-nome" placeholder="Seu nome" autocomplete="name" required />
+            </div>
+            <div class="campo">
+              <label for="input-casa">Casa / Apartamento</label>
+              <input type="text" id="input-casa" placeholder="Ex: Casa 42 ou Bloco B, Apto 12" required />
+            </div>
+            <div class="campo">
+              <label for="input-email">Email</label>
+              <input type="email" id="input-email" placeholder="seuemail@exemplo.com" autocomplete="email" required />
+            </div>
+
+            <button type="submit" class="botao botao-primario" id="botao-enviar-cadastro">
+              Receber código de verificação
+            </button>
+          </form>
+        </div>
+
+        <p class="texto-secundario" style="text-align:center;">
+          Já se cadastrou antes? Seu acesso fica salvo neste navegador.
+        </p>
+      </div>
+    </main>
+
+    <!-- ============ TELA: VERIFICAÇÃO DE CÓDIGO ============ -->
+    <main class="tela" id="tela-verificacao">
+      <div class="topo">
+        <div class="topo-marca">
+          <span class="gota"></span>
+          <span>VÉRT VILLE</span>
+        </div>
+        <h1>Confirme seu email</h1>
+        <p class="texto-secundario" id="texto-email-enviado">Enviamos um código para o seu email.</p>
+      </div>
+
+      <div class="conteudo">
+        <div class="card">
+          <h2 style="text-align:center; margin-bottom:18px;">Digite o código de 6 dígitos</h2>
+
+          <div class="codigo-input-grupo" id="grupo-codigo">
+            <input type="tel" maxlength="1" inputmode="numeric" class="campo-codigo" />
+            <input type="tel" maxlength="1" inputmode="numeric" class="campo-codigo" />
+            <input type="tel" maxlength="1" inputmode="numeric" class="campo-codigo" />
+            <input type="tel" maxlength="1" inputmode="numeric" class="campo-codigo" />
+            <input type="tel" maxlength="1" inputmode="numeric" class="campo-codigo" />
+            <input type="tel" maxlength="1" inputmode="numeric" class="campo-codigo" />
+          </div>
+
+          <button class="botao botao-primario" id="botao-confirmar-codigo" style="margin-top:22px;">
+            Confirmar
+          </button>
+          <button class="botao botao-texto" id="botao-reenviar-codigo" style="margin-top:8px;">
+            Não recebi o código — reenviar
+          </button>
+        </div>
+      </div>
+    </main>
+
+    <!-- ============ TELA: CALENDÁRIO / ESCOLHA ============ -->
+    <main class="tela" id="tela-calendario">
+      <div class="topo">
+        <div class="flex-entre">
+          <div class="topo-marca" style="margin-bottom:0;">
+            <span class="gota"></span>
+            <span>VÉRT VILLE</span>
+          </div>
+          <button class="botao-texto" id="botao-meus-agendamentos" style="color: var(--cor-agua-200); background:none; border:none; font-size:0.85rem; font-weight:600; cursor:pointer;">
+            Meus exames
+          </button>
+        </div>
+        <h1 id="saudacao-morador">Olá!</h1>
+        <p class="texto-secundario">Escolha como prefere agendar seu exame.</p>
+      </div>
+
+      <div class="conteudo">
+
+        <div class="card" style="display:flex; gap:10px;">
+          <button class="botao botao-secundario" id="aba-avulso" style="background: var(--cor-petroleo-950); color:white;">Exame avulso</button>
+          <button class="botao botao-secundario" id="aba-pacote">Pacote anual</button>
+        </div>
+
+        <!-- Conteúdo: avulso -->
+        <div id="conteudo-avulso">
+          <div class="card">
+            <h2>Escolha uma data</h2>
+            <p class="texto-secundario" id="valor-avulso-texto" style="margin-top:4px;"></p>
+
+            <div class="calendario-grade" id="grade-dias-semana-avulso"></div>
+            <div class="calendario-grade" id="grade-calendario-avulso"></div>
+          </div>
+
+          <div class="card oculto" id="card-slots-avulso">
+            <h3>Horários disponíveis</h3>
+            <p class="texto-secundario" id="data-selecionada-avulso-texto"></p>
+            <div class="slots-grade" id="grade-slots-avulso"></div>
+          </div>
+
+          <button class="botao botao-primario oculto" id="botao-continuar-avulso">
+            Continuar
+          </button>
+        </div>
+
+        <!-- Conteúdo: pacote -->
+        <div id="conteudo-pacote" class="oculto">
+          <div class="card">
+            <h2>Pacotes disponíveis</h2>
+            <p class="texto-secundario" style="margin-top:4px; margin-bottom:14px;">
+              O exame de piscina vence a cada poucos meses — garanta o ano todo de uma vez.
+            </p>
+            <div id="lista-pacotes"></div>
+          </div>
+
+          <div class="card oculto" id="card-datas-pacote">
+            <h3>Datas sugeridas</h3>
+            <p class="texto-secundario" style="margin-top:4px;">
+              Ajustamos automaticamente para os dias em que a Dra. está disponível. Você pode alterar cada data se precisar.
+            </p>
+            <div id="lista-datas-pacote" style="margin-top:14px;"></div>
+          </div>
+
+          <button class="botao botao-primario oculto" id="botao-continuar-pacote">
+            Continuar
+          </button>
+        </div>
+
+      </div>
+    </main>
+
+    <!-- ============ TELA: CHECKOUT ============ -->
+    <main class="tela" id="tela-checkout">
+      <div class="topo">
+        <div class="topo-marca">
+          <span class="gota"></span>
+          <span>VÉRT VILLE</span>
+        </div>
+        <h1>Resumo do exame</h1>
+        <p class="texto-secundario">Confira os dados antes de pagar.</p>
+      </div>
+
+      <div class="conteudo">
+        <div class="card" id="card-resumo-checkout">
+          <!-- preenchido via JS -->
+        </div>
+
+        <div class="card-areia">
+          <h3>Pagamento via Pix</h3>
+          <p class="texto-secundario" style="margin: 6px 0 12px;">Copie a chave abaixo e finalize o pagamento no app do seu banco.</p>
+
+          <div class="flex-entre" style="background:white; padding:12px 14px; border-radius:12px; margin-bottom:14px;">
+            <span id="texto-chave-pix" style="font-weight:600; font-family: var(--fonte-display);">—</span>
+            <button class="botao botao-secundario" id="botao-copiar-pix" style="width:auto; padding:8px 14px; font-size:0.85rem;">Copiar</button>
+          </div>
+
+          <a class="botao botao-whatsapp" id="botao-whatsapp-confirmar" href="#" target="_blank" rel="noopener">
+            Enviar comprovante no WhatsApp
+          </a>
+        </div>
+
+        <button class="botao botao-texto" id="botao-voltar-calendario">Voltar ao calendário</button>
+      </div>
+    </main>
+
+    <!-- ============ TELA: MEUS AGENDAMENTOS ============ -->
+    <main class="tela" id="tela-meus-agendamentos">
+      <div class="topo">
+        <div class="topo-marca">
+          <span class="gota"></span>
+          <span>VÉRT VILLE</span>
+        </div>
+        <h1>Meus exames</h1>
+        <p class="texto-secundario">Seu histórico e próximos exames marcados.</p>
+      </div>
+
+      <div class="conteudo">
+        <div id="lista-meus-agendamentos"></div>
+        <button class="botao botao-texto" id="botao-voltar-do-historico">Voltar</button>
+      </div>
+    </main>
+
+  </div>
+
+  <!-- ============ SDKs externos ============ -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+
+  <!-- ============ Config e módulos do app ============ -->
+  <script src="js/firebase-config.js"></script>
+  <script src="js/emailjs-config.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/disponibilidade.js"></script>
+  <script src="js/agendamento.js"></script>
+  <script src="js/app.js"></script>
+
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("service-worker.js").catch(() => {});
+      });
+    }
+  </script>
+</body>
+</html>

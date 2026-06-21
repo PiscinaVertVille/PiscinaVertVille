@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0B3D43" />
+  <title>Painel — Piscina Vért Ville</title>
+
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link rel="icon" href="icons/icon-192.png" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+
+    <!-- ============ TELA: LOGIN ============ -->
+    <main class="tela ativa" id="tela-login-medica">
+      <div class="topo">
+        <div class="topo-marca">
+          <span class="gota"></span>
+          <span>VÉRT VILLE</span>
+        </div>
+        <h1>Painel da médica</h1>
+        <p class="texto-secundario">Acesso restrito.</p>
+      </div>
+
+      <div class="conteudo">
+        <div class="card">
+          <form id="form-login-medica">
+            <div class="campo">
+              <label for="input-email-medica">Email</label>
+              <input type="email" id="input-email-medica" autocomplete="email" required />
+            </div>
+            <div class="campo">
+              <label for="input-senha-medica">Senha</label>
+              <input type="password" id="input-senha-medica" autocomplete="current-password" required />
+            </div>
+            <button type="submit" class="botao botao-primario" id="botao-login-medica">Entrar</button>
+          </form>
+          <p class="texto-secundario" style="margin-top:14px; text-align:center;">
+            Conta criada no Firebase Console → Authentication.
+          </p>
+        </div>
+      </div>
+    </main>
+
+    <!-- ============ TELA: DASHBOARD ============ -->
+    <main class="tela" id="tela-dashboard">
+      <div class="topo">
+        <div class="flex-entre">
+          <div class="topo-marca" style="margin-bottom:0;">
+            <span class="gota"></span>
+            <span>VÉRT VILLE</span>
+          </div>
+          <button class="botao-texto" id="botao-sair" style="color: var(--cor-agua-200); background:none; border:none; font-size:0.85rem; cursor:pointer;">Sair</button>
+        </div>
+        <h1>Sua agenda</h1>
+        <p class="texto-secundario" id="resumo-dashboard">Carregando...</p>
+      </div>
+
+      <div class="conteudo">
+
+        <div class="banner-alerta oculto" id="banner-conflitos">
+          <strong id="titulo-conflitos">⚠️ Exames em conflito</strong>
+          <div id="lista-conflitos"></div>
+        </div>
+
+        <div class="card">
+          <h2>Próximos exames marcados</h2>
+          <div id="lista-agenda-consolidada" style="margin-top:10px;"></div>
+        </div>
+
+        <div class="card">
+          <h2>Moradores cadastrados</h2>
+          <div id="lista-moradores" style="margin-top:10px;"></div>
+        </div>
+
+      </div>
+    </main>
+
+    <!-- ============ TELA: IMPORTAR PLANTÕES ============ -->
+    <main class="tela" id="tela-importar-plantoes">
+      <div class="topo">
+        <div class="topo-marca">
+          <span class="gota"></span>
+          <span>VÉRT VILLE</span>
+        </div>
+        <h1>Atualizar agenda</h1>
+        <p class="texto-secundario">Importe os dias em que você está de plantão no Shiftr.</p>
+      </div>
+
+      <div class="conteudo">
+        <div class="card">
+          <h3>Colar lista de datas</h3>
+          <p class="texto-secundario" style="margin:4px 0 10px;">Uma data por linha. Aceita 15/07/2026 ou 2026-07-15.</p>
+          <textarea id="texto-datas-plantao" rows="8" style="width:100%; padding:12px; border-radius:12px; border:1.5px solid #E2DACB; font-family: var(--fonte-corpo); font-size:0.95rem;" placeholder="15/07/2026&#10;16/07/2026&#10;22/07/2026"></textarea>
+
+          <button class="botao botao-primario" id="botao-importar-texto" style="margin-top:12px;">
+            Importar essas datas
+          </button>
+        </div>
+
+        <div class="card">
+          <h3>Ou enviar arquivo CSV</h3>
+          <p class="texto-secundario" style="margin:4px 0 10px;">Quando você tiver a exportação automática do Shiftr pronta.</p>
+          <input type="file" id="input-arquivo-csv" accept=".csv,text/csv" />
+          <button class="botao botao-secundario" id="botao-importar-csv" style="margin-top:12px;">
+            Importar CSV
+          </button>
+        </div>
+
+        <div class="card-areia">
+          <h3>Plantões importados (próximos)</h3>
+          <div id="lista-plantoes-importados" style="margin-top:10px;"></div>
+        </div>
+
+        <p class="texto-secundario" style="background: var(--cor-coral-100); padding:12px; border-radius:10px;">
+          Importante: esta importação <strong>substitui</strong> a lista de plantões futuros anterior. Sempre envie a lista completa atualizada, não apenas as novas datas.
+        </p>
+      </div>
+    </main>
+
+    <!-- ============ TELA: BLOQUEIOS MANUAIS ============ -->
+    <main class="tela" id="tela-bloqueios">
+      <div class="topo">
+        <div class="topo-marca">
+          <span class="gota"></span>
+          <span>VÉRT VILLE</span>
+        </div>
+        <h1>Bloquear horário</h1>
+        <p class="texto-secundario">Reserve um horário para compromissos pessoais.</p>
+      </div>
+
+      <div class="conteudo">
+        <div class="card">
+          <form id="form-bloqueio">
+            <div class="campo">
+              <label for="input-data-bloqueio">Data</label>
+              <input type="date" id="input-data-bloqueio" required />
+            </div>
+            <div class="campo">
+              <label for="input-inicio-bloqueio">Das</label>
+              <input type="time" id="input-inicio-bloqueio" required />
+            </div>
+            <div class="campo">
+              <label for="input-fim-bloqueio">Até</label>
+              <input type="time" id="input-fim-bloqueio" required />
+            </div>
+            <div class="campo">
+              <label for="input-motivo-bloqueio">Motivo (só você vê)</label>
+              <input type="text" id="input-motivo-bloqueio" placeholder="Ex: compromisso pessoal" />
+            </div>
+            <button type="submit" class="botao botao-primario">Bloquear horário</button>
+          </form>
+        </div>
+
+        <div class="card">
+          <h3>Bloqueios ativos</h3>
+          <div id="lista-bloqueios" style="margin-top:10px;"></div>
+        </div>
+      </div>
+    </main>
+
+    <!-- ============ TELA: CONFIGURAÇÕES ============ -->
+    <main class="tela" id="tela-config">
+      <div class="topo">
+        <div class="topo-marca">
+          <span class="gota"></span>
+          <span>VÉRT VILLE</span>
+        </div>
+        <h1>Configurações</h1>
+        <p class="texto-secundario">Valores, pacotes e horário de atendimento.</p>
+      </div>
+
+      <div class="conteudo">
+
+        <div class="card">
+          <h3>Dados de pagamento</h3>
+          <div class="campo">
+            <label for="input-chave-pix">Chave Pix</label>
+            <input type="text" id="input-chave-pix" placeholder="email, CPF, telefone ou chave aleatória" />
+          </div>
+          <div class="campo">
+            <label for="input-nome-recebedor">Nome do recebedor</label>
+            <input type="text" id="input-nome-recebedor" />
+          </div>
+          <div class="campo">
+            <label for="input-whatsapp-medica">WhatsApp (com DDD, só números)</label>
+            <input type="text" id="input-whatsapp-medica" placeholder="11999999999" />
+          </div>
+          <button class="botao botao-secundario" id="botao-salvar-pagamento">Salvar</button>
+        </div>
+
+        <div class="card">
+          <h3>Valor do exame avulso</h3>
+          <div class="campo">
+            <label for="input-valor-avulso">Valor (R$)</label>
+            <input type="number" step="0.01" id="input-valor-avulso" placeholder="150.00" />
+          </div>
+          <button class="botao botao-secundario" id="botao-salvar-avulso">Salvar</button>
+        </div>
+
+        <div class="card">
+          <h3>Horário de atendimento</h3>
+          <div class="campo">
+            <label for="input-horario-inicio-config">Início</label>
+            <input type="time" id="input-horario-inicio-config" />
+          </div>
+          <div class="campo">
+            <label for="input-horario-fim-config">Fim</label>
+            <input type="time" id="input-horario-fim-config" />
+          </div>
+          <div class="campo">
+            <label for="input-duracao-slot">Duração de cada exame (minutos)</label>
+            <input type="number" id="input-duracao-slot" placeholder="20" />
+          </div>
+          <button class="botao botao-secundario" id="botao-salvar-horario">Salvar</button>
+        </div>
+
+        <div class="card">
+          <h3>Pacotes anuais</h3>
+          <div id="lista-pacotes-config" style="margin-bottom:14px;"></div>
+
+          <div class="linha-divisoria"></div>
+          <h3 style="margin-top:14px;">Novo pacote</h3>
+          <div class="campo">
+            <label for="input-nome-pacote">Nome do pacote</label>
+            <input type="text" id="input-nome-pacote" placeholder="Ex: Pacote Anual" />
+          </div>
+          <div class="campo">
+            <label for="input-qtd-exames">Quantidade de exames no ano</label>
+            <input type="number" id="input-qtd-exames" placeholder="4" />
+          </div>
+          <div class="campo">
+            <label for="input-intervalo-meses">Intervalo entre exames (meses)</label>
+            <input type="number" id="input-intervalo-meses" placeholder="3" />
+          </div>
+          <div class="campo">
+            <label for="input-valor-pacote">Valor total do pacote (R$)</label>
+            <input type="number" step="0.01" id="input-valor-pacote" placeholder="540.00" />
+          </div>
+          <button class="botao botao-primario" id="botao-adicionar-pacote">Adicionar pacote</button>
+        </div>
+
+      </div>
+    </main>
+
+  </div>
+
+  <!-- ============ Navegação inferior ============ -->
+  <nav class="nav-inferior oculto" id="nav-inferior-painel">
+    <div class="nav-inferior-conteudo">
+      <button class="nav-item ativo" data-tela="tela-dashboard">Agenda</button>
+      <button class="nav-item" data-tela="tela-importar-plantoes">Plantões</button>
+      <button class="nav-item" data-tela="tela-bloqueios">Bloqueios</button>
+      <button class="nav-item" data-tela="tela-config">Config</button>
+    </div>
+  </nav>
+
+  <!-- ============ SDKs externos ============ -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+
+  <!-- ============ Config e módulos do app ============ -->
+  <script src="js/firebase-config.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/disponibilidade.js"></script>
+  <script src="js/agendamento.js"></script>
+  <script src="js/painel.js"></script>
+  <script src="js/painel-app.js"></script>
+</body>
+</html>

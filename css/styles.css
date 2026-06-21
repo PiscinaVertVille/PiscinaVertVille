@@ -1,0 +1,459 @@
+/* ==========================================================================
+   PISCINA VERT VILLE — Design Tokens
+   Paleta: água de piscina sob luz natural, num condomínio — calma, clínica,
+   nunca infantil. Petróleo profundo + areia clara + um coral discreto pra
+   estados de atenção (pagamento pendente, conflito de horário).
+   ========================================================================== */
+
+:root {
+  /* Cor */
+  --cor-petroleo-950: #0B3D43;   /* fundo escuro, headers, botão primário */
+  --cor-petroleo-700: #145863;
+  --cor-petroleo-500: #1F7A87;
+  --cor-agua-200: #BFE3E0;       /* destaques suaves, hover */
+  --cor-areia-50: #FAF6EF;       /* fundo geral da página */
+  --cor-areia-100: #F2ECE0;      /* cards */
+  --cor-grafite-800: #232B2A;    /* texto principal */
+  --cor-grafite-500: #5C6664;    /* texto secundário */
+  --cor-coral-500: #D97755;      /* atenção: pendente, conflito */
+  --cor-coral-100: #F6DFD3;
+  --cor-sucesso-600: #3D7A5C;    /* confirmado, pago */
+  --cor-sucesso-100: #DCEDE2;
+
+  /* Tipografia */
+  --fonte-display: 'Fraunces', Georgia, serif;     /* números, datas, valores — peso clínico */
+  --fonte-corpo: 'Sora', system-ui, -apple-system, sans-serif; /* texto corrido, UI */
+
+  /* Layout */
+  --raio-card: 18px;
+  --raio-botao: 12px;
+  --sombra-card: 0 2px 16px rgba(11, 61, 67, 0.08);
+  --largura-conteudo: 480px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--cor-areia-50);
+  color: var(--cor-grafite-800);
+  font-family: var(--fonte-corpo);
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.app-shell {
+  width: 100%;
+  max-width: var(--largura-conteudo);
+  min-height: 100vh;
+  background: var(--cor-areia-50);
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---------- Tipografia ---------- */
+
+h1, h2, h3, .numero-destaque {
+  font-family: var(--fonte-display);
+  font-weight: 600;
+  color: var(--cor-petroleo-950);
+  margin: 0;
+}
+
+h1 { font-size: 1.75rem; line-height: 1.2; letter-spacing: -0.01em; }
+h2 { font-size: 1.3rem; line-height: 1.25; }
+h3 { font-size: 1.05rem; }
+
+p, label, span, li { font-size: 0.95rem; line-height: 1.5; }
+
+.texto-secundario { color: var(--cor-grafite-500); font-size: 0.85rem; }
+
+.numero-destaque {
+  font-size: 2.1rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Header ---------- */
+
+.topo {
+  background: var(--cor-petroleo-950);
+  color: white;
+  padding: 28px 24px 22px;
+  border-radius: 0 0 28px 28px;
+}
+
+.topo h1 { color: white; }
+.topo .texto-secundario { color: var(--cor-agua-200); }
+
+.topo-marca {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.gota {
+  width: 14px;
+  height: 18px;
+  background: var(--cor-agua-200);
+  border-radius: 0 50% 50% 50%;
+  transform: rotate(45deg);
+  flex-shrink: 0;
+}
+
+.topo-marca span {
+  font-family: var(--fonte-display);
+  font-weight: 600;
+  font-size: 0.95rem;
+  letter-spacing: 0.02em;
+  color: var(--cor-agua-200);
+}
+
+/* ---------- Conteúdo ---------- */
+
+.conteudo {
+  padding: 24px 24px 100px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* ---------- Cards ---------- */
+
+.card {
+  background: white;
+  border-radius: var(--raio-card);
+  padding: 20px;
+  box-shadow: var(--sombra-card);
+}
+
+.card-areia {
+  background: var(--cor-areia-100);
+  border-radius: var(--raio-card);
+  padding: 20px;
+}
+
+/* ---------- Formulário ---------- */
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.campo label {
+  font-weight: 600;
+  color: var(--cor-petroleo-950);
+  font-size: 0.85rem;
+}
+
+.campo input,
+.campo select {
+  font-family: var(--fonte-corpo);
+  font-size: 1rem;
+  padding: 13px 14px;
+  border: 1.5px solid #E2DACB;
+  border-radius: var(--raio-botao);
+  background: white;
+  color: var(--cor-grafite-800);
+  outline: none;
+  transition: border-color 0.15s ease;
+  width: 100%;
+}
+
+.campo input:focus,
+.campo select:focus {
+  border-color: var(--cor-petroleo-500);
+}
+
+.campo input::placeholder { color: #B7AF9E; }
+
+/* Inputs de código de verificação */
+.codigo-input-grupo {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.codigo-input-grupo input {
+  width: 44px;
+  height: 54px;
+  text-align: center;
+  font-family: var(--fonte-display);
+  font-size: 1.4rem;
+  padding: 0;
+}
+
+/* ---------- Botões ---------- */
+
+.botao {
+  font-family: var(--fonte-corpo);
+  font-weight: 600;
+  font-size: 0.98rem;
+  padding: 15px 20px;
+  border-radius: var(--raio-botao);
+  border: none;
+  cursor: pointer;
+  text-align: center;
+  width: 100%;
+  transition: transform 0.1s ease, opacity 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.botao:active { transform: scale(0.98); }
+.botao:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.botao-primario {
+  background: var(--cor-petroleo-950);
+  color: white;
+}
+
+.botao-secundario {
+  background: var(--cor-areia-100);
+  color: var(--cor-petroleo-950);
+  border: 1.5px solid #E2DACB;
+}
+
+.botao-whatsapp {
+  background: #25D366;
+  color: white;
+}
+
+.botao-texto {
+  background: none;
+  color: var(--cor-petroleo-700);
+  text-decoration: underline;
+  width: auto;
+  padding: 8px;
+}
+
+.botao-perigo {
+  background: white;
+  color: var(--cor-coral-500);
+  border: 1.5px solid var(--cor-coral-100);
+}
+
+/* ---------- Selos de status ---------- */
+
+.selo {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 100px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.selo-pendente { background: var(--cor-coral-100); color: var(--cor-coral-500); }
+.selo-pago { background: var(--cor-sucesso-100); color: var(--cor-sucesso-600); }
+.selo-conflito { background: var(--cor-coral-100); color: var(--cor-coral-500); }
+.selo-livre { background: var(--cor-agua-200); color: var(--cor-petroleo-950); }
+
+/* ---------- Banner de alerta ---------- */
+
+.banner-alerta {
+  background: var(--cor-coral-100);
+  border-left: 4px solid var(--cor-coral-500);
+  border-radius: 10px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.banner-alerta strong { color: var(--cor-coral-500); }
+
+/* ---------- Calendário ---------- */
+
+.calendario-grade {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.dia-semana-label {
+  text-align: center;
+  font-size: 0.7rem;
+  color: var(--cor-grafite-500);
+  font-weight: 600;
+}
+
+.dia-celula {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: var(--cor-areia-100);
+  color: var(--cor-grafite-500);
+  border: 2px solid transparent;
+}
+
+.dia-celula.disponivel {
+  background: var(--cor-agua-200);
+  color: var(--cor-petroleo-950);
+}
+
+.dia-celula.indisponivel {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.dia-celula.selecionado {
+  background: var(--cor-petroleo-950);
+  color: white;
+  border-color: var(--cor-petroleo-700);
+}
+
+.dia-celula.vazio { visibility: hidden; cursor: default; }
+
+/* ---------- Slots de horário ---------- */
+
+.slots-grade {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.slot-horario {
+  padding: 10px 6px;
+  text-align: center;
+  border-radius: 10px;
+  background: var(--cor-areia-100);
+  font-weight: 600;
+  font-size: 0.88rem;
+  cursor: pointer;
+  border: 2px solid transparent;
+}
+
+.slot-horario.selecionado {
+  background: var(--cor-petroleo-950);
+  color: white;
+}
+
+.slot-horario.ocupado {
+  opacity: 0.3;
+  cursor: not-allowed;
+  text-decoration: line-through;
+}
+
+/* ---------- Navegação inferior fixa (painel) ---------- */
+
+.nav-inferior {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: white;
+  border-top: 1px solid #EAE3D4;
+  display: flex;
+  justify-content: center;
+  padding: 10px 0 calc(10px + env(safe-area-inset-bottom));
+  z-index: 50;
+}
+
+.nav-inferior-conteudo {
+  width: 100%;
+  max-width: var(--largura-conteudo);
+  display: flex;
+  justify-content: space-around;
+}
+
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.7rem;
+  color: var(--cor-grafite-500);
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 10px;
+  border: none;
+  background: none;
+}
+
+.nav-item.ativo { color: var(--cor-petroleo-950); }
+
+/* ---------- Utilidades ---------- */
+
+.linha-divisoria {
+  height: 1px;
+  background: #EAE3D4;
+  margin: 6px 0;
+}
+
+.flex-entre {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.oculto { display: none !important; }
+
+.spinner {
+  width: 18px;
+  height: 18px;
+  border: 2.5px solid rgba(255,255,255,0.4);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: girar 0.7s linear infinite;
+}
+
+@keyframes girar { to { transform: rotate(360deg); } }
+
+.toast {
+  position: fixed;
+  bottom: 90px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--cor-petroleo-950);
+  color: white;
+  padding: 12px 20px;
+  border-radius: 100px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  opacity: 0;
+  transition: all 0.25s ease;
+  z-index: 100;
+  white-space: nowrap;
+  box-shadow: var(--sombra-card);
+}
+
+.toast.mostrar {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.tela { display: none; }
+.tela.ativa { display: flex; flex-direction: column; flex: 1; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+input:focus-visible,
+button:focus-visible,
+.dia-celula:focus-visible,
+.slot-horario:focus-visible {
+  outline: 2px solid var(--cor-petroleo-500);
+  outline-offset: 2px;
+}
