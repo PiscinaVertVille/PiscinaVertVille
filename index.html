@@ -248,17 +248,15 @@
         </div>
 
         <div class="card-areia">
-          <h3>Pagamento via Pix</h3>
-          <p class="texto-secundario" style="margin: 6px 0 12px;">Copie a chave abaixo e finalize o pagamento no app do seu banco.</p>
+          <h3>Pagamento</h3>
+          <p class="texto-secundario" style="margin: 6px 0 14px;">
+            Pix ou cartão de crédito (em até 12x), tudo numa única tela segura.
+          </p>
 
-          <div class="flex-entre" style="background:white; padding:12px 14px; border-radius:12px; margin-bottom:14px;">
-            <span id="texto-chave-pix" style="font-weight:600; font-family: var(--fonte-display);">—</span>
-            <button class="botao botao-secundario" id="botao-copiar-pix" style="width:auto; padding:8px 14px; font-size:0.85rem;">Copiar</button>
-          </div>
-
-          <a class="botao botao-whatsapp" id="botao-whatsapp-confirmar" href="#" target="_blank" rel="noopener">
-            Enviar comprovante no WhatsApp
-          </a>
+          <button class="botao botao-primario" id="botao-pagar-agora">
+            Pagar agora
+          </button>
+          <p class="texto-secundario oculto" id="texto-erro-pagamento" style="margin-top:10px; color: var(--cor-coral-500);"></p>
         </div>
 
         <button class="botao botao-texto" id="botao-voltar-calendario">Voltar ao calendário</button>

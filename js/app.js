@@ -538,25 +538,57 @@ function preencherTelaCheckout(tipoTexto) {
     </div>
   `;
 
-  const chavePix = (cacheConfigExame && cacheConfigExame.chavePix) || "—";
-  document.getElementById("texto-chave-pix").textContent = chavePix;
-
-  const mensagem = montarMensagemWhatsApp(moradorAtual, agendamentoEmCheckout, tipoTexto);
-  const numeroWhats = (cacheConfigExame && cacheConfigExame.whatsappMedica) || "";
-  document.getElementById("botao-whatsapp-confirmar").href = montarLinkWhatsApp(numeroWhats, mensagem);
+  agendamentoEmCheckout.tipoTexto = tipoTexto;
+  document.getElementById("texto-erro-pagamento").classList.add("oculto");
 }
 
+// URL base do backend de pagamento (Vercel Functions). Atualize se o domínio mudar.
+const URL_BASE_API_PAGAMENTO = "https://piscinavertville-api.vercel.app";
+
 function configurarEventosCheckout() {
-  document.getElementById("botao-copiar-pix").addEventListener("click", async () => {
-    const chave = document.getElementById("texto-chave-pix").textContent;
-    const ok = await copiarParaAreaDeTransferencia(chave);
-    mostrarToast(ok ? "Chave Pix copiada!" : "Não foi possível copiar. Copie manualmente.");
-  });
+  document.getElementById("botao-pagar-agora").addEventListener("click", iniciarPagamentoInfinitePay);
 
   document.getElementById("botao-voltar-calendario").addEventListener("click", async () => {
     horariosSelecionadosAvulso = [];
     await iniciarTelaCalendario();
   });
+}
+
+async function iniciarPagamentoInfinitePay() {
+  const botao = document.getElementById("botao-pagar-agora");
+  const textoErro = document.getElementById("texto-erro-pagamento");
+  textoErro.classList.add("oculto");
+
+  botao.disabled = true;
+  botao.innerHTML = '<span class="spinner"></span>';
+
+  try {
+    const resposta = await fetch(`${URL_BASE_API_PAGAMENTO}/api/criar-checkout`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        agendamentoId: agendamentoEmCheckout.id,
+        nomeMorador: moradorAtual.nome,
+        emailMorador: moradorAtual.email,
+        telefoneMorador: moradorAtual.telefone,
+        valorTotal: agendamentoEmCheckout.valorTotal,
+        descricao: agendamentoEmCheckout.tipoTexto || "Exame de piscina - Piscina Vért Ville"
+      })
+    });
+
+    const dados = await resposta.json();
+
+    if (!resposta.ok || !dados.linkPagamento) {
+      throw new Error(dados.erro || "Não foi possível gerar o link de pagamento.");
+    }
+
+    window.location.href = dados.linkPagamento;
+  } catch (erro) {
+    textoErro.textContent = erro.message || "Algo deu errado ao iniciar o pagamento. Tente novamente.";
+    textoErro.classList.remove("oculto");
+    botao.disabled = false;
+    botao.textContent = "Pagar agora";
+  }
 }
 
 // --------------------------------------------------------------------------
