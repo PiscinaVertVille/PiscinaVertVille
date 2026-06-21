@@ -11,12 +11,12 @@
 // ==========================================================================
 
 const firebaseConfig = {
-  apiKey: "COLE_AQUI_SUA_API_KEY",
-  authDomain: "COLE_AQUI_SEU_PROJETO.firebaseapp.com",
-  projectId: "COLE_AQUI_SEU_PROJECT_ID",
-  storageBucket: "COLE_AQUI_SEU_PROJETO.appspot.com",
-  messagingSenderId: "COLE_AQUI_O_SENDER_ID",
-  appId: "COLE_AQUI_O_APP_ID"
+  apiKey: "AIzaSyDNmhme1wgNkFXUc05WIB6DpvkwxSChiDA",
+  authDomain: "piscinavertville.firebaseapp.com",
+  projectId: "piscinavertville",
+  storageBucket: "piscinavertville.firebasestorage.app",
+  messagingSenderId: "838444011436",
+  appId: "1:838444011436:web:34dbc499a14bfbc0acf409"
 };
 
 // Inicialização (Firebase v9+ compat, carregado via CDN no index.html)
