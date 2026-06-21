@@ -543,7 +543,7 @@ function preencherTelaCheckout(tipoTexto) {
 }
 
 // URL base do backend de pagamento (Vercel Functions). Atualize se o domínio mudar.
-const URL_BASE_API_PAGAMENTO = "https://piscinavertville-api.vercel.app";
+const URL_BASE_API_PAGAMENTO = "https://piscina-vert-ville-api.vercel.app";
 
 function configurarEventosCheckout() {
   document.getElementById("botao-pagar-agora").addEventListener("click", iniciarPagamentoInfinitePay);
