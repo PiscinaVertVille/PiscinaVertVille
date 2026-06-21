@@ -72,8 +72,18 @@
         </div>
 
         <div class="card">
-          <h2>Próximos exames marcados</h2>
-          <div id="lista-agenda-consolidada" style="margin-top:10px;"></div>
+          <div class="flex-entre" style="margin-bottom:6px;">
+            <button class="botao-texto" id="botao-mes-anterior" style="background:none; border:none; font-size:1.2rem; padding:4px 10px;">‹</button>
+            <h2 id="titulo-mes-calendario">—</h2>
+            <button class="botao-texto" id="botao-mes-seguinte" style="background:none; border:none; font-size:1.2rem; padding:4px 10px;">›</button>
+          </div>
+          <div class="calendario-grade" id="grade-dias-semana-painel"></div>
+          <div class="calendario-grade" id="grade-calendario-painel"></div>
+        </div>
+
+        <div class="card oculto" id="card-exames-do-dia">
+          <h3 id="titulo-exames-do-dia">Exames do dia</h3>
+          <div id="lista-exames-do-dia" style="margin-top:10px;"></div>
         </div>
 
         <div class="card">

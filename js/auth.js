@@ -1,40 +1,66 @@
 // ==========================================================================
-// AUTH — Cadastro e verificação do morador
+// AUTH — Cadastro, login e verificação do morador
 // ==========================================================================
-// Fluxo: nome + casa + email -> código de 6 dígitos por email -> confirma ->
-// sessão salva em localStorage (não precisa logar de novo no mesmo navegador).
+// Fluxo de cadastro: nome + casa + telefone + email + senha -> cria conta no
+// Firebase Auth -> envia código de 6 dígitos por email -> confirma -> sessão
+// real do Firebase Auth (funciona em qualquer navegador/dispositivo).
+//
+// Fluxo de login (já cadastrado): email + senha -> Firebase Auth.
 // ==========================================================================
-
-const CHAVE_SESSAO_MORADOR = "piscinaVV_morador";
 
 let codigoEnviadoTemp = null;
 let dadosCadastroTemp = null;
 
-function obterSessaoMorador() {
-  const raw = localStorage.getItem(CHAVE_SESSAO_MORADOR);
-  if (!raw) return null;
-  try {
-    return JSON.parse(raw);
-  } catch (e) {
-    return null;
-  }
-}
+/**
+ * Retorna o morador atualmente logado (a partir do Firebase Auth + Firestore),
+ * ou null se não houver sessão ativa ou ainda não verificado.
+ */
+async function obterSessaoMorador() {
+  const usuario = auth.currentUser;
+  if (!usuario) return null;
 
-function salvarSessaoMorador(morador) {
-  localStorage.setItem(CHAVE_SESSAO_MORADOR, JSON.stringify(morador));
-}
+  const doc = await db.collection("moradores").doc(usuario.uid).get();
+  if (!doc.exists) return null;
 
-function encerrarSessaoMorador() {
-  localStorage.removeItem(CHAVE_SESSAO_MORADOR);
+  const dados = doc.data();
+  if (!dados.verificado) return null;
+
+  return {
+    id: usuario.uid,
+    nome: dados.nome,
+    casa: dados.casa,
+    email: dados.email,
+    telefone: dados.telefone || ""
+  };
 }
 
 /**
- * Passo 1 do cadastro: valida campos, gera código, envia por email,
- * cria (ou reutiliza) o documento do morador no Firestore com verificado=false.
+ * Aguarda o Firebase Auth inicializar e resolver o estado de login atual.
+ * Necessário porque auth.currentUser pode estar undefined por uma fração
+ * de segundo no primeiro carregamento da página.
  */
-async function iniciarCadastroMorador(nome, casa, email) {
+function aguardarEstadoAuth() {
+  return new Promise((resolve) => {
+    const unsubscribe = auth.onAuthStateChanged((usuario) => {
+      unsubscribe();
+      resolve(usuario);
+    });
+  });
+}
+
+function encerrarSessaoMorador() {
+  return auth.signOut();
+}
+
+/**
+ * Passo 1 do cadastro: valida campos, cria a conta no Firebase Auth,
+ * cria o documento do morador no Firestore (verificado=false), envia o
+ * código de verificação por email.
+ */
+async function iniciarCadastroMorador(nome, casa, telefone, email, senha) {
   nome = nome.trim();
   casa = casa.trim();
+  telefone = (telefone || "").trim();
   email = email.trim().toLowerCase();
 
   if (!nome || !casa) {
@@ -43,41 +69,31 @@ async function iniciarCadastroMorador(nome, casa, email) {
   if (!emailValido(email)) {
     throw new Error("Digite um email válido.");
   }
+  if (!senha || senha.length < 6) {
+    throw new Error("A senha precisa ter pelo menos 6 caracteres.");
+  }
+
+  const credencial = await auth.createUserWithEmailAndPassword(email, senha);
+  const uid = credencial.user.uid;
 
   const codigo = gerarCodigoVerificacao();
   codigoEnviadoTemp = codigo;
-  dadosCadastroTemp = { nome, casa, email };
+  dadosCadastroTemp = { nome, email };
+
+  await db.collection("moradores").doc(uid).set({
+    nome,
+    casa,
+    telefone,
+    email,
+    verificado: false,
+    codigoVerificacao: codigo,
+    criadoEm: firebase.firestore.FieldValue.serverTimestamp(),
+    codigoEnviadoEm: firebase.firestore.FieldValue.serverTimestamp()
+  });
 
   await enviarCodigoPorEmail(nome, email, codigo);
 
-  // Salva (ou atualiza) o registro do morador já no banco, ainda não verificado.
-  const moradoresRef = db.collection("moradores");
-  const existente = await moradoresRef.where("email", "==", email).limit(1).get();
-
-  let moradorId;
-  if (!existente.empty) {
-    moradorId = existente.docs[0].id;
-    await moradoresRef.doc(moradorId).update({
-      nome,
-      casa,
-      codigoVerificacao: codigo,
-      verificado: false,
-      codigoEnviadoEm: firebase.firestore.FieldValue.serverTimestamp()
-    });
-  } else {
-    const novoDoc = await moradoresRef.add({
-      nome,
-      casa,
-      email,
-      verificado: false,
-      codigoVerificacao: codigo,
-      criadoEm: firebase.firestore.FieldValue.serverTimestamp(),
-      codigoEnviadoEm: firebase.firestore.FieldValue.serverTimestamp()
-    });
-    moradorId = novoDoc.id;
-  }
-
-  return moradorId;
+  return uid;
 }
 
 /**
@@ -99,15 +115,13 @@ async function confirmarCodigoVerificacao(moradorId, codigoDigitado) {
     verificadoEm: firebase.firestore.FieldValue.serverTimestamp()
   });
 
-  const moradorConfirmado = {
+  return {
     id: moradorId,
     nome: dados.nome,
     casa: dados.casa,
-    email: dados.email
+    email: dados.email,
+    telefone: dados.telefone || ""
   };
-
-  salvarSessaoMorador(moradorConfirmado);
-  return moradorConfirmado;
 }
 
 /**
@@ -125,4 +139,42 @@ async function reenviarCodigoVerificacao(moradorId) {
     codigoVerificacao: codigo,
     codigoEnviadoEm: firebase.firestore.FieldValue.serverTimestamp()
   });
+}
+
+/**
+ * Login de morador já cadastrado e verificado anteriormente.
+ */
+async function loginMorador(email, senha) {
+  email = email.trim().toLowerCase();
+  const credencial = await auth.signInWithEmailAndPassword(email, senha);
+  const uid = credencial.user.uid;
+
+  const doc = await db.collection("moradores").doc(uid).get();
+  if (!doc.exists) {
+    throw new Error("Cadastro não encontrado.");
+  }
+
+  const dados = doc.data();
+
+  if (!dados.verificado) {
+    // Conta criada mas nunca verificou o código — reenvia e força a tela de verificação.
+    const codigo = gerarCodigoVerificacao();
+    dadosCadastroTemp = { nome: dados.nome, email: dados.email };
+    await enviarCodigoPorEmail(dados.nome, dados.email, codigo);
+    await db.collection("moradores").doc(uid).update({
+      codigoVerificacao: codigo,
+      codigoEnviadoEm: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    const erro = new Error("PRECISA_VERIFICAR");
+    erro.moradorId = uid;
+    throw erro;
+  }
+
+  return {
+    id: uid,
+    nome: dados.nome,
+    casa: dados.casa,
+    email: dados.email,
+    telefone: dados.telefone || ""
+  };
 }

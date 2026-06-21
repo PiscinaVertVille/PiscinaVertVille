@@ -17,6 +17,7 @@ document.addEventListener("DOMContentLoaded", () => {
   configurarImportacaoPlantoes();
   configurarBloqueios();
   configurarConfiguracoes();
+  configurarNavegacaoCalendarioPainel();
 
   auth.onAuthStateChanged(async (usuario) => {
     if (usuario) {
@@ -72,26 +73,160 @@ function configurarNavegacaoInferior() {
 }
 
 // --------------------------------------------------------------------------
-// Dashboard
+// Dashboard — Calendário mensal de agendamentos
 // --------------------------------------------------------------------------
+
+let mesPainelAtual = new Date();
+let agendamentosPorDataCache = {};
+let diaSelecionadoNoPainel = null;
 
 async function iniciarDashboard() {
   try {
-    const [agenda, conflitos, moradores] = await Promise.all([
-      buscarAgendaConsolidada(),
+    const [agendamentosPorData, conflitos, moradores] = await Promise.all([
+      agruparAgendamentosPorData(),
       listarAgendamentosEmConflito(),
       listarMoradoresCadastrados()
     ]);
 
+    agendamentosPorDataCache = agendamentosPorData;
+
+    const totalAgendamentos = Object.values(agendamentosPorData).reduce((soma, lista) => soma + lista.length, 0);
     document.getElementById("resumo-dashboard").textContent =
-      `${agenda.length} agendamento(s) registrado(s) · ${moradores.length} morador(es) cadastrado(s)`;
+      `${totalAgendamentos} exame(s) marcado(s) · ${moradores.length} morador(es) cadastrado(s)`;
 
     desenharBannerConflitos(conflitos);
-    desenharAgendaConsolidada(agenda);
     desenharListaMoradores(moradores);
+    desenharCalendarioPainel();
+
+    document.getElementById("card-exames-do-dia").classList.add("oculto");
+    diaSelecionadoNoPainel = null;
   } catch (erro) {
     mostrarToast("Não foi possível carregar o dashboard.");
   }
+}
+
+function configurarNavegacaoCalendarioPainel() {
+  document.getElementById("botao-mes-anterior").addEventListener("click", () => {
+    mesPainelAtual = new Date(mesPainelAtual.getFullYear(), mesPainelAtual.getMonth() - 1, 1);
+    desenharCalendarioPainel();
+  });
+
+  document.getElementById("botao-mes-seguinte").addEventListener("click", () => {
+    mesPainelAtual = new Date(mesPainelAtual.getFullYear(), mesPainelAtual.getMonth() + 1, 1);
+    desenharCalendarioPainel();
+  });
+}
+
+function desenharCalendarioPainel() {
+  const grade = document.getElementById("grade-calendario-painel");
+  const gradeSemana = document.getElementById("grade-dias-semana-painel");
+  gradeSemana.innerHTML = DIAS_SEMANA_PT.map((d) => `<div class="dia-semana-label">${d}</div>`).join("");
+
+  document.getElementById("titulo-mes-calendario").textContent =
+    `${MESES_PT[mesPainelAtual.getMonth()].charAt(0).toUpperCase() + MESES_PT[mesPainelAtual.getMonth()].slice(1)} de ${mesPainelAtual.getFullYear()}`;
+
+  grade.innerHTML = "";
+
+  const ano = mesPainelAtual.getFullYear();
+  const mes = mesPainelAtual.getMonth();
+  const primeiroDiaSemana = new Date(ano, mes, 1).getDay();
+  const totalDiasMes = new Date(ano, mes + 1, 0).getDate();
+  const hoje = hojeISO();
+
+  for (let i = 0; i < primeiroDiaSemana; i++) {
+    grade.innerHTML += `<div class="dia-celula vazio"></div>`;
+  }
+
+  for (let dia = 1; dia <= totalDiasMes; dia++) {
+    const dataISO = dataParaISO(new Date(ano, mes, dia));
+    const temAgendamento = !!(agendamentosPorDataCache[dataISO] && agendamentosPorDataCache[dataISO].length);
+    const ehPassado = dataISO < hoje;
+
+    const classes = ["dia-celula"];
+    if (temAgendamento) classes.push("com-agendamento", "disponivel");
+    if (ehPassado) classes.push("dia-passado");
+    if (dataISO === diaSelecionadoNoPainel) classes.push("selecionado");
+
+    grade.innerHTML += `<div class="${classes.join(" ")}" data-data="${dataISO}" tabindex="0">${dia}</div>`;
+  }
+
+  grade.querySelectorAll(".dia-celula:not(.vazio)").forEach((celula) => {
+    celula.addEventListener("click", () => selecionarDiaNoPainel(celula.dataset.data));
+  });
+}
+
+function selecionarDiaNoPainel(dataISO) {
+  diaSelecionadoNoPainel = dataISO;
+  desenharCalendarioPainel();
+
+  const card = document.getElementById("card-exames-do-dia");
+  const lista = document.getElementById("lista-exames-do-dia");
+  const itens = agendamentosPorDataCache[dataISO] || [];
+
+  document.getElementById("titulo-exames-do-dia").textContent =
+    `Exames do dia ${formatarDataExtensa(dataISO)}`;
+
+  if (itens.length === 0) {
+    lista.innerHTML = `<p class="texto-secundario">Nenhum exame marcado nesse dia.</p>`;
+  } else {
+    lista.innerHTML = itens.map((item, idx) => desenharCardExameDoDia(item, idx)).join("");
+
+    lista.querySelectorAll("[data-marcar-pago]").forEach((botao) => {
+      botao.addEventListener("click", async () => {
+        await marcarAgendamentoComoPago(botao.dataset.marcarPago);
+        mostrarToast("Marcado como pago!");
+        await iniciarDashboard();
+        selecionarDiaNoPainel(dataISO);
+      });
+    });
+
+    lista.querySelectorAll("[data-excluir-agendamento]").forEach((botao) => {
+      botao.addEventListener("click", async () => {
+        const confirmado = window.confirm(
+          "Excluir este agendamento? Essa ação não pode ser desfeita e o horário será liberado novamente."
+        );
+        if (!confirmado) return;
+
+        await excluirAgendamentoDefinitivamente(botao.dataset.excluirAgendamento);
+        mostrarToast("Agendamento excluído.");
+        await iniciarDashboard();
+        selecionarDiaNoPainel(dataISO);
+      });
+    });
+  }
+
+  card.classList.remove("oculto");
+  card.scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
+function desenharCardExameDoDia(item, idx) {
+  const seloPagamento =
+    item.statusPagamento === "pago"
+      ? `<span class="selo selo-pago">Pago</span>`
+      : item.statusPagamento === "cancelado"
+      ? `<span class="selo" style="background:#EAE3D4; color:var(--cor-grafite-500);">Cancelado</span>`
+      : `<span class="selo selo-pendente">Pendente</span>`;
+
+  const nomeExibicao = item.nomePaciente ? `${item.nomePaciente} (${item.nomeMorador})` : item.nomeMorador;
+
+  return `
+    <div class="flex-entre" style="padding:10px 0; border-bottom:1px solid #EAE3D4;">
+      <div>
+        <strong>${item.horario}</strong> — ${nomeExibicao}<br/>
+        <span class="texto-secundario">${item.casa} · ${item.tipo === "pacote" ? "Pacote" : "Avulso"}</span>
+      </div>
+      <div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px;">
+        ${seloPagamento}
+        <div style="display:flex; gap:8px;">
+          ${
+            item.statusPagamento === "pendente"
+              ? `<button class="botao-texto" data-marcar-pago="${item.agendamentoId}" style="background:none; border:none; font-size:0.78rem;">Marcar pago</button>`
+              : ""
+          }
+          <button class="botao-texto" data-excluir-agendamento="${item.agendamentoId}" style="background:none; border:none; font-size:0.78rem; color:var(--cor-coral-500);">Excluir</button>
+        </div>
+      </div>
+    </div>`;
 }
 
 function desenharBannerConflitos(conflitos) {
@@ -114,51 +249,6 @@ function desenharBannerConflitos(conflitos) {
       return `<p style="margin-top:6px;"><strong>${ag.nomeMorador}</strong> (${ag.casa}) — ${datasConflito}</p>`;
     })
     .join("");
-}
-
-function desenharAgendaConsolidada(agenda) {
-  const lista = document.getElementById("lista-agenda-consolidada");
-
-  if (agenda.length === 0) {
-    lista.innerHTML = `<p class="texto-secundario">Nenhum exame marcado ainda.</p>`;
-    return;
-  }
-
-  lista.innerHTML = agenda
-    .map((ag) => {
-      const proximaData = (ag.datas || []).find((d) => d.status !== "cancelado");
-      if (!proximaData) return "";
-
-      const seloPagamento =
-        ag.statusPagamento === "pago"
-          ? `<span class="selo selo-pago">Pago</span>`
-          : `<span class="selo selo-pendente">Pendente</span>`;
-
-      return `
-        <div class="flex-entre" style="padding:10px 0; border-bottom:1px solid #EAE3D4;">
-          <div>
-            <strong>${ag.nomeMorador}</strong> · ${ag.casa}<br/>
-            <span class="texto-secundario">${formatarDataExtensa(proximaData.data)} às ${proximaData.horario}</span>
-          </div>
-          <div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px;">
-            ${seloPagamento}
-            ${
-              ag.statusPagamento === "pendente"
-                ? `<button class="botao-texto" data-marcar-pago="${ag.id}" style="background:none; border:none; font-size:0.78rem;">Marcar como pago</button>`
-                : ""
-            }
-          </div>
-        </div>`;
-    })
-    .join("");
-
-  lista.querySelectorAll("[data-marcar-pago]").forEach((botao) => {
-    botao.addEventListener("click", async () => {
-      await marcarAgendamentoComoPago(botao.dataset.marcarPago);
-      mostrarToast("Marcado como pago!");
-      await iniciarDashboard();
-    });
-  });
 }
 
 function desenharListaMoradores(moradores) {

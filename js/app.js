@@ -5,8 +5,8 @@
 let moradorAtual = null;
 let moradorIdEmVerificacao = null;
 let tipoAgendamentoSelecionado = "avulso"; // "avulso" | "pacote"
-let dataSelecionadaAvulso = null;
-let horarioSelecionadoAvulso = null;
+let quantidadeHorariosDesejada = 1;
+let horariosSelecionadosAvulso = []; // [{ data, horario, nomePaciente }]
 let pacoteSelecionado = null;
 let datasPacoteAjustaveis = []; // [{ data, horario }]
 let agendamentoEmCheckout = null;
@@ -22,20 +22,34 @@ function mostrarTela(idTela) {
 // Inicialização
 // --------------------------------------------------------------------------
 
-document.addEventListener("DOMContentLoaded", async () => {
-  const sessao = obterSessaoMorador();
-  if (sessao) {
-    moradorAtual = sessao;
-    await iniciarTelaCalendario();
-  } else {
-    mostrarTela("tela-cadastro");
-  }
-
+document.addEventListener("DOMContentLoaded", () => {
   configurarEventosCadastro();
+  configurarEventosLogin();
   configurarEventosVerificacao();
   configurarEventosCalendario();
   configurarEventosCheckout();
   configurarEventosHistorico();
+
+  document.getElementById("botao-ir-para-login").addEventListener("click", () => {
+    mostrarTela("tela-login-morador");
+  });
+  document.getElementById("botao-ir-para-cadastro").addEventListener("click", () => {
+    mostrarTela("tela-cadastro");
+  });
+
+  auth.onAuthStateChanged(async (usuario) => {
+    if (!usuario) {
+      mostrarTela("tela-cadastro");
+      return;
+    }
+    const morador = await obterSessaoMorador();
+    if (morador) {
+      moradorAtual = morador;
+      await iniciarTelaCalendario();
+    } else {
+      mostrarTela("tela-cadastro");
+    }
+  });
 });
 
 // --------------------------------------------------------------------------
@@ -49,25 +63,73 @@ function configurarEventosCadastro() {
     const botao = document.getElementById("botao-enviar-cadastro");
     const nome = document.getElementById("input-nome").value;
     const casa = document.getElementById("input-casa").value;
+    const telefone = document.getElementById("input-telefone").value;
     const email = document.getElementById("input-email").value;
+    const senha = document.getElementById("input-senha").value;
 
     botao.disabled = true;
-    botao.textContent = "Enviando...";
+    botao.textContent = "Criando...";
 
     try {
-      const moradorId = await iniciarCadastroMorador(nome, casa, email);
+      const moradorId = await iniciarCadastroMorador(nome, casa, telefone, email, senha);
       moradorIdEmVerificacao = moradorId;
       document.getElementById("texto-email-enviado").textContent =
         `Enviamos um código para ${email}.`;
       mostrarTela("tela-verificacao");
       document.querySelector(".campo-codigo").focus();
     } catch (erro) {
-      mostrarToast(erro.message || "Não foi possível enviar o código. Tente novamente.");
+      mostrarToast(traduzirErroFirebase(erro));
     } finally {
       botao.disabled = false;
-      botao.textContent = "Receber código de verificação";
+      botao.textContent = "Criar cadastro";
     }
   });
+}
+
+// --------------------------------------------------------------------------
+// Tela: Login (morador já cadastrado)
+// --------------------------------------------------------------------------
+
+function configurarEventosLogin() {
+  const form = document.getElementById("form-login-morador");
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const botao = document.getElementById("botao-fazer-login");
+    const email = document.getElementById("input-email-login").value;
+    const senha = document.getElementById("input-senha-login").value;
+
+    botao.disabled = true;
+    botao.textContent = "Entrando...";
+
+    try {
+      const morador = await loginMorador(email, senha);
+      moradorAtual = morador;
+      await iniciarTelaCalendario();
+    } catch (erro) {
+      if (erro.message === "PRECISA_VERIFICAR") {
+        moradorIdEmVerificacao = erro.moradorId;
+        document.getElementById("texto-email-enviado").textContent =
+          "Reenviamos um código para o seu email.";
+        mostrarTela("tela-verificacao");
+      } else {
+        mostrarToast(traduzirErroFirebase(erro));
+      }
+    } finally {
+      botao.disabled = false;
+      botao.textContent = "Entrar";
+    }
+  });
+}
+
+/** Traduz mensagens de erro comuns do Firebase Auth pra português amigável */
+function traduzirErroFirebase(erro) {
+  const codigo = erro.code || "";
+  if (codigo.includes("email-already-in-use")) return "Esse email já tem cadastro. Tente fazer login.";
+  if (codigo.includes("wrong-password") || codigo.includes("invalid-credential")) return "Email ou senha incorretos.";
+  if (codigo.includes("user-not-found")) return "Não encontramos cadastro com esse email.";
+  if (codigo.includes("weak-password")) return "Senha muito curta — use pelo menos 6 caracteres.";
+  if (codigo.includes("invalid-email")) return "Digite um email válido.";
+  return erro.message || "Algo deu errado. Tente novamente.";
 }
 
 // --------------------------------------------------------------------------
@@ -138,9 +200,12 @@ async function iniciarTelaCalendario() {
 
   if (cacheConfigExame) {
     document.getElementById("valor-avulso-texto").textContent =
-      `Valor: ${formatarMoeda(cacheConfigExame.valorAvulso || 0)}`;
+      `Valor por exame: ${formatarMoeda(cacheConfigExame.valorAvulso || 0)}`;
   }
 
+  horariosSelecionadosAvulso = [];
+  quantidadeHorariosDesejada = 1;
+  atualizarTituloEscolhaData();
   desenharCabecalhoDiasSemana();
   desenharCalendarioAvulso();
   desenharListaPacotes();
@@ -174,8 +239,22 @@ function configurarEventosCalendario() {
     document.getElementById("aba-avulso").style.color = "";
   });
 
+  document.querySelectorAll("#grade-quantidade-horarios .slot-horario").forEach((botao) => {
+    botao.addEventListener("click", () => {
+      quantidadeHorariosDesejada = Number(botao.dataset.quantidade);
+      document.querySelectorAll("#grade-quantidade-horarios .slot-horario").forEach((b) => b.classList.remove("selecionado"));
+      botao.classList.add("selecionado");
+
+      if (horariosSelecionadosAvulso.length > quantidadeHorariosDesejada) {
+        horariosSelecionadosAvulso = horariosSelecionadosAvulso.slice(0, quantidadeHorariosDesejada);
+      }
+      atualizarTituloEscolhaData();
+      desenharListaHorariosSelecionados();
+    });
+  });
+
   document.getElementById("botao-continuar-avulso").addEventListener("click", () => {
-    if (!dataSelecionadaAvulso || !horarioSelecionadoAvulso) return;
+    if (horariosSelecionadosAvulso.length === 0) return;
     abrirCheckoutAvulso();
   });
 
@@ -184,6 +263,14 @@ function configurarEventosCalendario() {
   });
 
   document.getElementById("botao-meus-agendamentos").addEventListener("click", abrirTelaHistorico);
+}
+
+function atualizarTituloEscolhaData() {
+  const restantes = quantidadeHorariosDesejada - horariosSelecionadosAvulso.length;
+  document.getElementById("titulo-escolha-data").textContent =
+    restantes > 0
+      ? `Escolha a data (faltam ${restantes} de ${quantidadeHorariosDesejada})`
+      : `Todos os horários escolhidos`;
 }
 
 function desenharCalendarioAvulso() {
@@ -213,14 +300,14 @@ function desenharCalendarioAvulso() {
 }
 
 function selecionarDiaAvulso(dataISO) {
-  dataSelecionadaAvulso = dataISO;
-  horarioSelecionadoAvulso = null;
-
   document.querySelectorAll("#grade-calendario-avulso .dia-celula").forEach((c) => {
     c.classList.toggle("selecionado", c.dataset.data === dataISO);
   });
 
-  const slots = obterSlotsDisponiveisNoDia(dataISO);
+  const jaEscolhidosNesseDia = new Set(
+    horariosSelecionadosAvulso.filter((h) => h.data === dataISO).map((h) => h.horario)
+  );
+  const slots = obterSlotsDisponiveisNoDia(dataISO).filter((s) => !jaEscolhidosNesseDia.has(s));
   const cardSlots = document.getElementById("card-slots-avulso");
   const grade = document.getElementById("grade-slots-avulso");
 
@@ -235,15 +322,74 @@ function selecionarDiaAvulso(dataISO) {
 
     grade.querySelectorAll(".slot-horario").forEach((slot) => {
       slot.addEventListener("click", () => {
-        horarioSelecionadoAvulso = slot.dataset.horario;
-        grade.querySelectorAll(".slot-horario").forEach((s) => s.classList.remove("selecionado"));
-        slot.classList.add("selecionado");
-        document.getElementById("botao-continuar-avulso").classList.remove("oculto");
+        if (horariosSelecionadosAvulso.length >= quantidadeHorariosDesejada) {
+          mostrarToast("Você já escolheu todos os horários necessários.");
+          return;
+        }
+        horariosSelecionadosAvulso.push({ data: dataISO, horario: slot.dataset.horario, nomePaciente: "" });
+        atualizarTituloEscolhaData();
+        desenharListaHorariosSelecionados();
+        selecionarDiaAvulso(dataISO);
       });
     });
   }
 
   cardSlots.classList.remove("oculto");
+}
+
+function desenharListaHorariosSelecionados() {
+  const card = document.getElementById("card-horarios-selecionados");
+  const lista = document.getElementById("lista-horarios-selecionados");
+  const botaoContinuar = document.getElementById("botao-continuar-avulso");
+
+  if (horariosSelecionadosAvulso.length === 0) {
+    card.classList.add("oculto");
+    botaoContinuar.classList.add("oculto");
+    return;
+  }
+
+  card.classList.remove("oculto");
+  document.getElementById("contador-horarios-texto").textContent =
+    `${horariosSelecionadosAvulso.length} de ${quantidadeHorariosDesejada} horário(s) escolhido(s).`;
+
+  lista.innerHTML = horariosSelecionadosAvulso
+    .map(
+      (h, indice) => `
+      <div class="card-areia" style="margin-bottom:8px;">
+        <div class="flex-entre">
+          <strong>${formatarDataExtensa(h.data)} às ${h.horario}</strong>
+          <button class="botao-texto" data-remover-horario="${indice}" style="background:none; border:none; color:var(--cor-coral-500); padding:0;">Remover</button>
+        </div>
+        <input
+          type="text"
+          placeholder="Nome do paciente (opcional, ex: filho/filha)"
+          value="${h.nomePaciente || ""}"
+          data-nome-paciente="${indice}"
+          style="margin-top:8px; width:100%; padding:10px; border-radius:10px; border:1.5px solid #E2DACB; font-family: var(--fonte-corpo);"
+        />
+      </div>`
+    )
+    .join("");
+
+  lista.querySelectorAll("[data-remover-horario]").forEach((botao) => {
+    botao.addEventListener("click", () => {
+      horariosSelecionadosAvulso.splice(Number(botao.dataset.removerHorario), 1);
+      atualizarTituloEscolhaData();
+      desenharListaHorariosSelecionados();
+    });
+  });
+
+  lista.querySelectorAll("[data-nome-paciente]").forEach((input) => {
+    input.addEventListener("input", () => {
+      horariosSelecionadosAvulso[Number(input.dataset.nomePaciente)].nomePaciente = input.value;
+    });
+  });
+
+  if (horariosSelecionadosAvulso.length === quantidadeHorariosDesejada) {
+    botaoContinuar.classList.remove("oculto");
+  } else {
+    botaoContinuar.classList.add("oculto");
+  }
 }
 
 function desenharListaPacotes() {
@@ -314,8 +460,6 @@ function desenharDatasPacote() {
     })
     .join("");
 
-  // Alteração simples: ao clicar em "Alterar", abre um prompt nativo com data ISO.
-  // (Mantém o código leve; pode evoluir pra um seletor visual depois.)
   container.querySelectorAll("[data-indice]").forEach((botao) => {
     botao.addEventListener("click", () => {
       const indice = Number(botao.dataset.indice);
@@ -343,11 +487,7 @@ function desenharDatasPacote() {
 
 async function abrirCheckoutAvulso() {
   try {
-    agendamentoEmCheckout = await criarAgendamentoAvulso(
-      moradorAtual,
-      dataSelecionadaAvulso,
-      horarioSelecionadoAvulso
-    );
+    agendamentoEmCheckout = await criarAgendamentoAvulso(moradorAtual, horariosSelecionadosAvulso);
     preencherTelaCheckout("Exame avulso");
     mostrarTela("tela-checkout");
   } catch (erro) {
@@ -382,7 +522,10 @@ async function abrirCheckoutPacote() {
 function preencherTelaCheckout(tipoTexto) {
   const card = document.getElementById("card-resumo-checkout");
   const datasHtml = agendamentoEmCheckout.datas
-    .map((d) => `<li>${formatarDataExtensa(d.data)} às ${d.horario}</li>`)
+    .map((d) => {
+      const sufixo = d.nomePaciente ? ` — ${d.nomePaciente}` : "";
+      return `<li>${formatarDataExtensa(d.data)} às ${d.horario}${sufixo}</li>`;
+    })
     .join("");
 
   card.innerHTML = `
@@ -410,8 +553,9 @@ function configurarEventosCheckout() {
     mostrarToast(ok ? "Chave Pix copiada!" : "Não foi possível copiar. Copie manualmente.");
   });
 
-  document.getElementById("botao-voltar-calendario").addEventListener("click", () => {
-    mostrarTela("tela-calendario");
+  document.getElementById("botao-voltar-calendario").addEventListener("click", async () => {
+    horariosSelecionadosAvulso = [];
+    await iniciarTelaCalendario();
   });
 }
 
@@ -461,7 +605,8 @@ function desenharCardAgendamento(agendamento) {
           : d.status === "cancelado"
           ? ` <span class="texto-secundario">(cancelado)</span>`
           : "";
-      return `<li>${formatarDataExtensa(d.data)} às ${d.horario}${statusTexto}</li>`;
+      const sufixoPaciente = d.nomePaciente ? ` — ${d.nomePaciente}` : "";
+      return `<li>${formatarDataExtensa(d.data)} às ${d.horario}${sufixoPaciente}${statusTexto}</li>`;
     })
     .join("");
 

@@ -3,10 +3,13 @@
 // ==========================================================================
 
 /**
- * Cria um agendamento do tipo "avulso": uma única data + horário.
+ * Cria um agendamento do tipo "avulso": um ou mais horários, cada um podendo
+ * ter um nome de paciente diferente (ex: morador + filhos no mesmo agendamento).
+ * itensHorario: [{ data: "2026-07-15", horario: "09:00", nomePaciente: "" }, ...]
  */
-async function criarAgendamentoAvulso(morador, dataISO, horario) {
-  const valor = cacheConfigExame.valorAvulso;
+async function criarAgendamentoAvulso(morador, itensHorario) {
+  const valorPorExame = cacheConfigExame.valorAvulso;
+  const valorTotal = valorPorExame * itensHorario.length;
 
   const docRef = await db.collection("agendamentos").add({
     moradorId: morador.id,
@@ -14,13 +17,18 @@ async function criarAgendamentoAvulso(morador, dataISO, horario) {
     casa: morador.casa,
     tipo: "avulso",
     pacoteId: null,
-    datas: [{ data: dataISO, horario, status: "agendado" }],
-    valorTotal: valor,
+    datas: itensHorario.map((item) => ({
+      data: item.data,
+      horario: item.horario,
+      nomePaciente: item.nomePaciente || "",
+      status: "agendado"
+    })),
+    valorTotal,
     statusPagamento: "pendente",
     criadoEm: firebase.firestore.FieldValue.serverTimestamp()
   });
 
-  return { id: docRef.id, datas: [{ data: dataISO, horario }], valorTotal: valor };
+  return { id: docRef.id, datas: itensHorario, valorTotal };
 }
 
 /**
@@ -73,7 +81,10 @@ async function remarcarDataDoAgendamento(agendamentoId, indiceData, novaData, no
 /** Monta a mensagem de WhatsApp pro pagamento (avulso ou pacote) */
 function montarMensagemWhatsApp(morador, agendamento, tipoTexto) {
   const datasFormatadas = agendamento.datas
-    .map((d) => `${formatarDataExtensa(d.data)} às ${d.horario}`)
+    .map((d) => {
+      const sufixoPaciente = d.nomePaciente ? ` (${d.nomePaciente})` : "";
+      return `${formatarDataExtensa(d.data)} às ${d.horario}${sufixoPaciente}`;
+    })
     .join("\n- ");
 
   return (
@@ -121,4 +132,14 @@ async function cancelarDataDoAgendamento(agendamentoId, indiceData) {
   novasDatas[indiceData] = { ...novasDatas[indiceData], status: "cancelado" };
 
   await docRef.update({ datas: novasDatas });
+}
+
+/**
+ * Exclui DEFINITIVAMENTE um agendamento do banco (usado pela médica quando o
+ * morador marcou errado/duplicado e o pagamento ainda não foi feito).
+ * Diferente de cancelar: aqui o registro desaparece por completo, liberando
+ * o horário de novo na agenda.
+ */
+async function excluirAgendamentoDefinitivamente(agendamentoId) {
+  await db.collection("agendamentos").doc(agendamentoId).delete();
 }

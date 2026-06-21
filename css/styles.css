@@ -324,6 +324,24 @@ p, label, span, li { font-size: 0.95rem; line-height: 1.5; }
 
 .dia-celula.vazio { visibility: hidden; cursor: default; }
 
+.dia-celula.com-agendamento {
+  position: relative;
+}
+
+.dia-celula.com-agendamento::after {
+  content: "";
+  position: absolute;
+  bottom: 4px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--cor-coral-500);
+}
+
+.dia-celula.dia-passado {
+  opacity: 0.55;
+}
+
 /* ---------- Slots de horário ---------- */
 
 .slots-grade {

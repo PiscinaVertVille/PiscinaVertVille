@@ -257,3 +257,41 @@ async function listarMoradoresCadastrados() {
   snap.forEach((doc) => lista.push({ id: doc.id, ...doc.data() }));
   return lista;
 }
+
+/**
+ * Agrupa todos os itens de agendamento (não cancelados) por data ISO.
+ * Retorna um objeto { "2026-07-15": [ {agendamentoId, indiceData, horario, nomeMorador, casa, nomePaciente, statusPagamento, status}, ... ] }
+ * Útil para desenhar as "bolinhas" no calendário mensal do painel.
+ */
+async function agruparAgendamentosPorData() {
+  const snap = await db.collection("agendamentos").get();
+  const porData = {};
+
+  snap.forEach((doc) => {
+    const dados = doc.data();
+    (dados.datas || []).forEach((d, indice) => {
+      if (d.status === "cancelado") return;
+
+      if (!porData[d.data]) porData[d.data] = [];
+      porData[d.data].push({
+        agendamentoId: doc.id,
+        indiceData: indice,
+        horario: d.horario,
+        nomePaciente: d.nomePaciente || "",
+        status: d.status,
+        nomeMorador: dados.nomeMorador,
+        casa: dados.casa,
+        statusPagamento: dados.statusPagamento,
+        valorTotal: dados.valorTotal,
+        tipo: dados.tipo
+      });
+    });
+  });
+
+  // Ordena os itens de cada dia por horário
+  Object.keys(porData).forEach((data) => {
+    porData[data].sort((a, b) => a.horario.localeCompare(b.horario));
+  });
+
+  return porData;
+}

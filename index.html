@@ -33,9 +33,9 @@
 
       <div class="conteudo">
         <div class="card">
-          <h2>Seu cadastro</h2>
+          <h2>Criar cadastro</h2>
           <p class="texto-secundario" style="margin-top:4px; margin-bottom:16px;">
-            Só precisamos de alguns dados pra confirmar quem é você.
+            Você usa esse login depois pra acessar de qualquer celular.
           </p>
 
           <form id="form-cadastro">
@@ -48,19 +48,61 @@
               <input type="text" id="input-casa" placeholder="Ex: Casa 42 ou Bloco B, Apto 12" required />
             </div>
             <div class="campo">
+              <label for="input-telefone">Telefone (WhatsApp)</label>
+              <input type="tel" id="input-telefone" placeholder="(11) 99999-9999" autocomplete="tel" />
+            </div>
+            <div class="campo">
               <label for="input-email">Email</label>
               <input type="email" id="input-email" placeholder="seuemail@exemplo.com" autocomplete="email" required />
             </div>
+            <div class="campo">
+              <label for="input-senha">Crie uma senha</label>
+              <input type="password" id="input-senha" placeholder="Mínimo 6 caracteres" autocomplete="new-password" required minlength="6" />
+            </div>
 
             <button type="submit" class="botao botao-primario" id="botao-enviar-cadastro">
-              Receber código de verificação
+              Criar cadastro
             </button>
           </form>
         </div>
 
-        <p class="texto-secundario" style="text-align:center;">
-          Já se cadastrou antes? Seu acesso fica salvo neste navegador.
-        </p>
+        <button class="botao botao-texto" id="botao-ir-para-login" style="text-align:center;">
+          Já tenho cadastro — fazer login
+        </button>
+      </div>
+    </main>
+
+    <!-- ============ TELA: LOGIN ============ -->
+    <main class="tela" id="tela-login-morador">
+      <div class="topo">
+        <div class="topo-marca">
+          <span class="gota"></span>
+          <span>VÉRT VILLE</span>
+        </div>
+        <h1>Entrar</h1>
+        <p class="texto-secundario">Acesse com seu email e senha.</p>
+      </div>
+
+      <div class="conteudo">
+        <div class="card">
+          <form id="form-login-morador">
+            <div class="campo">
+              <label for="input-email-login">Email</label>
+              <input type="email" id="input-email-login" autocomplete="email" required />
+            </div>
+            <div class="campo">
+              <label for="input-senha-login">Senha</label>
+              <input type="password" id="input-senha-login" autocomplete="current-password" required />
+            </div>
+            <button type="submit" class="botao botao-primario" id="botao-fazer-login">
+              Entrar
+            </button>
+          </form>
+        </div>
+
+        <button class="botao botao-texto" id="botao-ir-para-cadastro" style="text-align:center;">
+          Ainda não tenho cadastro
+        </button>
       </div>
     </main>
 
@@ -124,7 +166,28 @@
         <!-- Conteúdo: avulso -->
         <div id="conteudo-avulso">
           <div class="card">
-            <h2>Escolha uma data</h2>
+            <h2>Quantos horários você precisa?</h2>
+            <p class="texto-secundario" style="margin-top:4px; margin-bottom:10px;">
+              Marque para você e mais pessoas da casa de uma vez, se quiser.
+            </p>
+            <div class="slots-grade" id="grade-quantidade-horarios">
+              <div class="slot-horario selecionado" data-quantidade="1">1</div>
+              <div class="slot-horario" data-quantidade="2">2</div>
+              <div class="slot-horario" data-quantidade="3">3</div>
+              <div class="slot-horario" data-quantidade="4">4</div>
+              <div class="slot-horario" data-quantidade="5">5</div>
+              <div class="slot-horario" data-quantidade="6">6</div>
+            </div>
+          </div>
+
+          <div class="card oculto" id="card-horarios-selecionados">
+            <h3>Horários escolhidos</h3>
+            <p class="texto-secundario" style="margin:4px 0 10px;" id="contador-horarios-texto"></p>
+            <div id="lista-horarios-selecionados"></div>
+          </div>
+
+          <div class="card">
+            <h2 id="titulo-escolha-data">Escolha uma data</h2>
             <p class="texto-secundario" id="valor-avulso-texto" style="margin-top:4px;"></p>
 
             <div class="calendario-grade" id="grade-dias-semana-avulso"></div>
