@@ -342,6 +342,39 @@ p, label, span, li { font-size: 0.95rem; line-height: 1.5; }
   opacity: 0.55;
 }
 
+/* ---------- Navegação de mês com indicador de agendamento ---------- */
+
+.botao-nav-mes {
+  position: relative;
+  background: var(--cor-areia-100);
+  border: none;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--cor-petroleo-950);
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.botao-nav-mes:active { transform: scale(0.95); }
+
+.botao-nav-mes.com-indicador::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--cor-coral-500);
+  border: 2px solid white;
+}
+
 /* ---------- Slots de horário ---------- */
 
 .slots-grade {
@@ -463,6 +496,30 @@ p, label, span, li { font-size: 0.95rem; line-height: 1.5; }
 
 .tela { display: none; }
 .tela.ativa { display: flex; flex-direction: column; flex: 1; }
+
+/* ---------- Modal ---------- */
+
+.modal-fundo {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(11, 61, 67, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 20px;
+}
+
+.modal-conteudo {
+  background: var(--cor-areia-50);
+  border-radius: var(--raio-card);
+  padding: 20px;
+  width: 100%;
+  max-width: 420px;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 8px 32px rgba(11, 61, 67, 0.25);
+}
 
 @media (prefers-reduced-motion: reduce) {
   * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }

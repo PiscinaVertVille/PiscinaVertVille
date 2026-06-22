@@ -187,8 +187,16 @@
           </div>
 
           <div class="card">
-            <h2 id="titulo-escolha-data">Escolha uma data</h2>
-            <p class="texto-secundario" id="valor-avulso-texto" style="margin-top:4px;"></p>
+            <div class="flex-entre" style="margin-bottom:4px;">
+              <h2 id="titulo-escolha-data" style="font-size:1.05rem;">Escolha uma data</h2>
+            </div>
+            <p class="texto-secundario" id="valor-avulso-texto" style="margin-top:2px; margin-bottom:10px;"></p>
+
+            <div class="flex-entre" style="margin-bottom:6px;">
+              <button class="botao-nav-mes" id="botao-avulso-mes-anterior">‹</button>
+              <strong id="titulo-avulso-mes">—</strong>
+              <button class="botao-nav-mes" id="botao-avulso-mes-seguinte">›</button>
+            </div>
 
             <div class="calendario-grade" id="grade-dias-semana-avulso"></div>
             <div class="calendario-grade" id="grade-calendario-avulso"></div>
@@ -279,6 +287,30 @@
         <button class="botao botao-texto" id="botao-voltar-do-historico">Voltar</button>
       </div>
     </main>
+
+    <!-- ============ MODAL: Escolher/Alterar data (calendário) ============ -->
+    <div class="modal-fundo oculto" id="modal-calendario">
+      <div class="modal-conteudo">
+        <div class="flex-entre" style="margin-bottom:10px;">
+          <h3 id="titulo-modal-calendario">Escolha a nova data</h3>
+          <button class="botao-texto" id="botao-fechar-modal-calendario" style="background:none; border:none; font-size:1.3rem; padding:0;">✕</button>
+        </div>
+
+        <div class="flex-entre" style="margin-bottom:6px;">
+          <button class="botao-texto" id="botao-modal-mes-anterior" style="background:none; border:none; font-size:1.2rem; padding:4px 10px;">‹</button>
+          <strong id="titulo-modal-mes">—</strong>
+          <button class="botao-texto" id="botao-modal-mes-seguinte" style="background:none; border:none; font-size:1.2rem; padding:4px 10px;">›</button>
+        </div>
+
+        <div class="calendario-grade" id="grade-dias-semana-modal"></div>
+        <div class="calendario-grade" id="grade-calendario-modal"></div>
+
+        <div id="card-slots-modal" class="oculto" style="margin-top:14px;">
+          <p class="texto-secundario" id="data-selecionada-modal-texto" style="margin-bottom:8px;"></p>
+          <div class="slots-grade" id="grade-slots-modal"></div>
+        </div>
+      </div>
+    </div>
 
   </div>
 

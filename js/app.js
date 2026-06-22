@@ -27,6 +27,7 @@ document.addEventListener("DOMContentLoaded", () => {
   configurarEventosLogin();
   configurarEventosVerificacao();
   configurarEventosCalendario();
+  configurarEventosModalCalendario();
   configurarEventosCheckout();
   configurarEventosHistorico();
 
@@ -205,6 +206,7 @@ async function iniciarTelaCalendario() {
 
   horariosSelecionadosAvulso = [];
   quantidadeHorariosDesejada = 1;
+  mesCalendarioAtual = new Date();
   atualizarTituloEscolhaData();
   desenharCabecalhoDiasSemana();
   desenharCalendarioAvulso();
@@ -219,6 +221,18 @@ function desenharCabecalhoDiasSemana() {
 }
 
 function configurarEventosCalendario() {
+  document.getElementById("botao-avulso-mes-anterior").addEventListener("click", () => {
+    mesCalendarioAtual = new Date(mesCalendarioAtual.getFullYear(), mesCalendarioAtual.getMonth() - 1, 1);
+    document.getElementById("card-slots-avulso").classList.add("oculto");
+    desenharCalendarioAvulso();
+  });
+
+  document.getElementById("botao-avulso-mes-seguinte").addEventListener("click", () => {
+    mesCalendarioAtual = new Date(mesCalendarioAtual.getFullYear(), mesCalendarioAtual.getMonth() + 1, 1);
+    document.getElementById("card-slots-avulso").classList.add("oculto");
+    desenharCalendarioAvulso();
+  });
+
   document.getElementById("aba-avulso").addEventListener("click", () => {
     tipoAgendamentoSelecionado = "avulso";
     document.getElementById("conteudo-avulso").classList.remove("oculto");
@@ -282,6 +296,9 @@ function desenharCalendarioAvulso() {
   const primeiroDiaSemana = new Date(ano, mes, 1).getDay();
   const totalDiasMes = new Date(ano, mes + 1, 0).getDate();
 
+  document.getElementById("titulo-avulso-mes").textContent =
+    `${MESES_PT[mes].charAt(0).toUpperCase() + MESES_PT[mes].slice(1)} de ${ano}`;
+
   for (let i = 0; i < primeiroDiaSemana; i++) {
     grade.innerHTML += `<div class="dia-celula vazio"></div>`;
   }
@@ -297,6 +314,35 @@ function desenharCalendarioAvulso() {
   grade.querySelectorAll(".dia-celula.disponivel").forEach((celula) => {
     celula.addEventListener("click", () => selecionarDiaAvulso(celula.dataset.data));
   });
+
+  atualizarIndicadoresNavegacaoAvulso();
+}
+
+/** Verifica se existe algum dia disponível dentro de um mês/ano específico */
+function mesTemDiaDisponivel(ano, mes) {
+  const totalDiasMes = new Date(ano, mes + 1, 0).getDate();
+  const hoje = hojeISO();
+
+  for (let dia = 1; dia <= totalDiasMes; dia++) {
+    const dataISO = dataParaISO(new Date(ano, mes, dia));
+    if (dataISO >= hoje && diaEstaDisponivel(dataISO)) return true;
+  }
+  return false;
+}
+
+/** Atualiza o destaque (bolinha) nos botões de mês anterior/seguinte do calendário avulso */
+function atualizarIndicadoresNavegacaoAvulso() {
+  const ano = mesCalendarioAtual.getFullYear();
+  const mes = mesCalendarioAtual.getMonth();
+
+  const mesAnteriorData = new Date(ano, mes - 1, 1);
+  const mesSeguinteData = new Date(ano, mes + 1, 1);
+
+  const temNoAnterior = mesTemDiaDisponivel(mesAnteriorData.getFullYear(), mesAnteriorData.getMonth());
+  const temNoSeguinte = mesTemDiaDisponivel(mesSeguinteData.getFullYear(), mesSeguinteData.getMonth());
+
+  document.getElementById("botao-avulso-mes-anterior").classList.toggle("com-indicador", temNoAnterior);
+  document.getElementById("botao-avulso-mes-seguinte").classList.toggle("com-indicador", temNoSeguinte);
 }
 
 function selecionarDiaAvulso(dataISO) {
@@ -446,7 +492,8 @@ function desenharDatasPacote() {
     .map((d, indice) => {
       if (!d.data) {
         return `<div class="banner-alerta" style="margin-bottom:8px;">
-          <strong>Exame ${indice + 1}:</strong> não encontramos data disponível automaticamente. Você poderá ajustar depois com a Dra.
+          <strong>Exame ${indice + 1}:</strong> não encontramos data disponível automaticamente.
+          <button class="botao-texto" data-indice="${indice}" style="background:none; border:none; padding:0; margin-top:4px;">Escolher data</button>
         </div>`;
       }
       return `
@@ -462,23 +509,112 @@ function desenharDatasPacote() {
 
   container.querySelectorAll("[data-indice]").forEach((botao) => {
     botao.addEventListener("click", () => {
-      const indice = Number(botao.dataset.indice);
-      const novaDataISO = window.prompt(
-        "Digite a nova data no formato AAAA-MM-DD (apenas dias disponíveis serão aceitos):",
-        datasPacoteAjustaveis[indice].data || hojeISO()
-      );
-      if (!novaDataISO) return;
-
-      if (!diaEstaDisponivel(novaDataISO)) {
-        mostrarToast("Essa data não está disponível. Escolha outra.");
-        return;
-      }
-
-      const slots = obterSlotsDisponiveisNoDia(novaDataISO);
-      datasPacoteAjustaveis[indice] = { data: novaDataISO, horario: slots[0] || null };
-      desenharDatasPacote();
+      abrirModalCalendario(Number(botao.dataset.indice));
     });
   });
+}
+
+// --------------------------------------------------------------------------
+// Modal de calendário (reutilizado para ajustar datas do pacote)
+// --------------------------------------------------------------------------
+
+let indiceEmEdicaoNoModal = null;
+let mesModalCalendario = new Date();
+let dataSelecionadaNoModal = null;
+
+function configurarEventosModalCalendario() {
+  document.getElementById("botao-fechar-modal-calendario").addEventListener("click", fecharModalCalendario);
+  document.getElementById("modal-calendario").addEventListener("click", (e) => {
+    if (e.target.id === "modal-calendario") fecharModalCalendario();
+  });
+  document.getElementById("botao-modal-mes-anterior").addEventListener("click", () => {
+    mesModalCalendario = new Date(mesModalCalendario.getFullYear(), mesModalCalendario.getMonth() - 1, 1);
+    desenharCalendarioModal();
+  });
+  document.getElementById("botao-modal-mes-seguinte").addEventListener("click", () => {
+    mesModalCalendario = new Date(mesModalCalendario.getFullYear(), mesModalCalendario.getMonth() + 1, 1);
+    desenharCalendarioModal();
+  });
+}
+
+function abrirModalCalendario(indice) {
+  indiceEmEdicaoNoModal = indice;
+  dataSelecionadaNoModal = null;
+  mesModalCalendario = new Date();
+
+  document.getElementById("titulo-modal-calendario").textContent = `Exame ${indice + 1} — escolha a data`;
+  document.getElementById("card-slots-modal").classList.add("oculto");
+
+  const gradeSemana = document.getElementById("grade-dias-semana-modal");
+  gradeSemana.innerHTML = DIAS_SEMANA_PT.map((d) => `<div class="dia-semana-label">${d}</div>`).join("");
+
+  desenharCalendarioModal();
+  document.getElementById("modal-calendario").classList.remove("oculto");
+}
+
+function fecharModalCalendario() {
+  document.getElementById("modal-calendario").classList.add("oculto");
+  indiceEmEdicaoNoModal = null;
+}
+
+function desenharCalendarioModal() {
+  const grade = document.getElementById("grade-calendario-modal");
+  grade.innerHTML = "";
+
+  const ano = mesModalCalendario.getFullYear();
+  const mes = mesModalCalendario.getMonth();
+  const primeiroDiaSemana = new Date(ano, mes, 1).getDay();
+  const totalDiasMes = new Date(ano, mes + 1, 0).getDate();
+
+  document.getElementById("titulo-modal-mes").textContent =
+    `${MESES_PT[mes].charAt(0).toUpperCase() + MESES_PT[mes].slice(1)} de ${ano}`;
+
+  for (let i = 0; i < primeiroDiaSemana; i++) {
+    grade.innerHTML += `<div class="dia-celula vazio"></div>`;
+  }
+
+  for (let dia = 1; dia <= totalDiasMes; dia++) {
+    const dataISO = dataParaISO(new Date(ano, mes, dia));
+    const disponivel = diaEstaDisponivel(dataISO) && diferencaDias(hojeISO(), dataISO) >= 0;
+    const classe = disponivel ? "disponivel" : "indisponivel";
+
+    grade.innerHTML += `<div class="dia-celula ${classe}" data-data="${dataISO}" tabindex="0">${dia}</div>`;
+  }
+
+  grade.querySelectorAll(".dia-celula.disponivel").forEach((celula) => {
+    celula.addEventListener("click", () => selecionarDiaNoModal(celula.dataset.data));
+  });
+}
+
+function selecionarDiaNoModal(dataISO) {
+  dataSelecionadaNoModal = dataISO;
+
+  document.querySelectorAll("#grade-calendario-modal .dia-celula").forEach((c) => {
+    c.classList.toggle("selecionado", c.dataset.data === dataISO);
+  });
+
+  const slots = obterSlotsDisponiveisNoDia(dataISO);
+  const cardSlots = document.getElementById("card-slots-modal");
+  const grade = document.getElementById("grade-slots-modal");
+
+  document.getElementById("data-selecionada-modal-texto").textContent = formatarDataExtensa(dataISO);
+
+  if (slots.length === 0) {
+    grade.innerHTML = `<p class="texto-secundario">Nenhum horário livre nesse dia.</p>`;
+  } else {
+    grade.innerHTML = slots.map((s) => `<div class="slot-horario" data-horario="${s}">${s}</div>`).join("");
+
+    grade.querySelectorAll(".slot-horario").forEach((slot) => {
+      slot.addEventListener("click", () => {
+        datasPacoteAjustaveis[indiceEmEdicaoNoModal] = { data: dataSelecionadaNoModal, horario: slot.dataset.horario };
+        desenharDatasPacote();
+        fecharModalCalendario();
+        mostrarToast("Data atualizada!");
+      });
+    });
+  }
+
+  cardSlots.classList.remove("oculto");
 }
 
 // --------------------------------------------------------------------------
@@ -616,7 +752,8 @@ async function abrirTelaHistorico() {
 
     lista.innerHTML = agendamentos.map((ag) => desenharCardAgendamento(ag)).join("");
   } catch (erro) {
-    lista.innerHTML = `<p class="texto-secundario">Não foi possível carregar seu histórico.</p>`;
+    console.error("Erro ao buscar agendamentos do morador:", erro);
+    lista.innerHTML = `<p class="texto-secundario">Não foi possível carregar seu histórico. Puxe a tela para baixo e tente de novo.</p>`;
   }
 }
 

@@ -54,13 +54,21 @@ async function criarAgendamentoPacote(morador, pacote, datasComHorarios) {
 
 /** Busca todos os agendamentos de um morador (histórico + ativos) */
 async function buscarAgendamentosDoMorador(moradorId) {
+  // Filtra só por moradorId (sem orderBy junto) para não depender de um
+  // índice composto no Firestore — a ordenação é feita aqui no JS.
   const snap = await db.collection("agendamentos")
     .where("moradorId", "==", moradorId)
-    .orderBy("criadoEm", "desc")
     .get();
 
   const lista = [];
   snap.forEach((doc) => lista.push({ id: doc.id, ...doc.data() }));
+
+  lista.sort((a, b) => {
+    const tempoA = a.criadoEm && a.criadoEm.toMillis ? a.criadoEm.toMillis() : 0;
+    const tempoB = b.criadoEm && b.criadoEm.toMillis ? b.criadoEm.toMillis() : 0;
+    return tempoB - tempoA;
+  });
+
   return lista;
 }
 

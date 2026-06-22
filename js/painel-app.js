@@ -117,6 +117,34 @@ function configurarNavegacaoCalendarioPainel() {
   });
 }
 
+/** Verifica se existe algum agendamento dentro de um mês/ano específico */
+function mesTemAgendamento(ano, mes) {
+  const primeiroDia = dataParaISO(new Date(ano, mes, 1));
+  const ultimoDia = dataParaISO(new Date(ano, mes + 1, 0));
+
+  return Object.keys(agendamentosPorDataCache).some(
+    (dataISO) => dataISO >= primeiroDia && dataISO <= ultimoDia && agendamentosPorDataCache[dataISO].length > 0
+  );
+}
+
+/** Atualiza o destaque (bolinha) nos botões de mês anterior/seguinte conforme houver agendamento */
+function atualizarIndicadoresDeNavegacao() {
+  const ano = mesPainelAtual.getFullYear();
+  const mes = mesPainelAtual.getMonth();
+
+  const mesAnteriorData = new Date(ano, mes - 1, 1);
+  const mesSeguinteData = new Date(ano, mes + 1, 1);
+
+  const temNoAnterior = mesTemAgendamento(mesAnteriorData.getFullYear(), mesAnteriorData.getMonth());
+  const temNoSeguinte = mesTemAgendamento(mesSeguinteData.getFullYear(), mesSeguinteData.getMonth());
+
+  const botaoAnterior = document.getElementById("botao-mes-anterior");
+  const botaoSeguinte = document.getElementById("botao-mes-seguinte");
+
+  botaoAnterior.classList.toggle("com-indicador", temNoAnterior);
+  botaoSeguinte.classList.toggle("com-indicador", temNoSeguinte);
+}
+
 function desenharCalendarioPainel() {
   const grade = document.getElementById("grade-calendario-painel");
   const gradeSemana = document.getElementById("grade-dias-semana-painel");
@@ -153,6 +181,8 @@ function desenharCalendarioPainel() {
   grade.querySelectorAll(".dia-celula:not(.vazio)").forEach((celula) => {
     celula.addEventListener("click", () => selecionarDiaNoPainel(celula.dataset.data));
   });
+
+  atualizarIndicadoresDeNavegacao();
 }
 
 function selecionarDiaNoPainel(dataISO) {
