@@ -1,5 +1,5 @@
 // ==========================================================================
-// CONFIGURAÇÃO FIREBASE — Piscina Vert Ville
+// CONFIGURAÇÃO FIREBASE — Piscina Vertville
 // ==========================================================================
 // Como obter esses valores:
 // 1. Acesse https://console.firebase.google.com

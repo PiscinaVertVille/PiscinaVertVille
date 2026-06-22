@@ -708,7 +708,7 @@ async function iniciarPagamentoInfinitePay() {
         emailMorador: moradorAtual.email,
         telefoneMorador: moradorAtual.telefone,
         valorTotal: agendamentoEmCheckout.valorTotal,
-        descricao: agendamentoEmCheckout.tipoTexto || "Exame de piscina - Piscina Vért Ville"
+        descricao: agendamentoEmCheckout.tipoTexto || "Exame de piscina - Piscina Vertville"
       })
     });
 
@@ -751,6 +751,28 @@ async function abrirTelaHistorico() {
     }
 
     lista.innerHTML = agendamentos.map((ag) => desenharCardAgendamento(ag)).join("");
+
+    lista.querySelectorAll("[data-excluir-meu-agendamento]").forEach((botao) => {
+      botao.addEventListener("click", async () => {
+        const confirmado = window.confirm(
+          "Excluir este agendamento? O horário será liberado e você poderá marcar novamente."
+        );
+        if (!confirmado) return;
+
+        botao.disabled = true;
+        botao.textContent = "Excluindo...";
+
+        try {
+          await excluirAgendamentoDefinitivamente(botao.dataset.excluirMeuAgendamento);
+          mostrarToast("Agendamento excluído.");
+          await abrirTelaHistorico();
+        } catch (erro) {
+          mostrarToast("Não foi possível excluir. Tente novamente.");
+          botao.disabled = false;
+          botao.textContent = "Excluir agendamento";
+        }
+      });
+    });
   } catch (erro) {
     console.error("Erro ao buscar agendamentos do morador:", erro);
     lista.innerHTML = `<p class="texto-secundario">Não foi possível carregar seu histórico. Puxe a tela para baixo e tente de novo.</p>`;
@@ -759,12 +781,14 @@ async function abrirTelaHistorico() {
 
 function desenharCardAgendamento(agendamento) {
   const temConflito = (agendamento.datas || []).some((d) => d.status === "conflito");
-  const seloPagamento =
-    agendamento.statusPagamento === "pago"
-      ? `<span class="selo selo-pago">Pago</span>`
-      : agendamento.statusPagamento === "cancelado"
-      ? `<span class="selo" style="background:#EAE3D4; color:var(--cor-grafite-500);">Cancelado</span>`
-      : `<span class="selo selo-pendente">Pagamento pendente</span>`;
+  const estaPago = agendamento.statusPagamento === "pago";
+  const estaPendente = agendamento.statusPagamento === "pendente";
+
+  const seloPagamento = estaPago
+    ? `<span class="selo selo-pago">Pago</span>`
+    : agendamento.statusPagamento === "cancelado"
+    ? `<span class="selo" style="background:#EAE3D4; color:var(--cor-grafite-500);">Cancelado</span>`
+    : `<span class="selo selo-pendente">Pagamento pendente</span>`;
 
   const datasHtml = (agendamento.datas || [])
     .map((d) => {
@@ -786,6 +810,16 @@ function desenharCardAgendamento(agendamento) {
       </div>`
     : "";
 
+  const numeroWhats = (cacheConfigExame && cacheConfigExame.whatsappMedica) || "";
+  const botaoWhatsApp =
+    estaPago && numeroWhats
+      ? `<a class="botao botao-whatsapp" href="${montarLinkWhatsApp(numeroWhats, "Olá, Dra.! Sobre meu exame de piscina marcado...")}" target="_blank" rel="noopener" style="margin-top:10px;">Falar com a Dra. no WhatsApp</a>`
+      : "";
+
+  const botaoExcluir = estaPendente
+    ? `<button class="botao botao-perigo" data-excluir-meu-agendamento="${agendamento.id}" style="margin-top:10px;">Excluir agendamento</button>`
+    : "";
+
   return `
     <div class="card" style="margin-bottom:12px;">
       <div class="flex-entre">
@@ -798,6 +832,8 @@ function desenharCardAgendamento(agendamento) {
         <strong>${formatarMoeda(agendamento.valorTotal)}</strong>
       </div>
       ${bannerConflito}
+      ${botaoWhatsApp}
+      ${botaoExcluir}
     </div>
   `;
 }

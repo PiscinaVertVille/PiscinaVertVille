@@ -316,6 +316,12 @@ p, label, span, li { font-size: 0.95rem; line-height: 1.5; }
   cursor: not-allowed;
 }
 
+/* No painel da médica, dias indisponíveis (plantão/bloqueio) ainda são
+   clicáveis — ela pode ter agendamentos antigos ou querer ver detalhes. */
+#grade-calendario-painel .dia-celula.indisponivel {
+  cursor: pointer;
+}
+
 .dia-celula.selecionado {
   background: var(--cor-petroleo-950);
   color: white;

@@ -1,7 +1,7 @@
 {
-  "name": "Piscina Vert Ville - Exame de Piscina",
+  "name": "Piscina Vertville - Exame de Piscina",
   "short_name": "Piscina VV",
-  "description": "Agendamento de exame de piscina do Condomínio Vért Ville",
+  "description": "Agendamento de exame de piscina do Condomínio Vertville",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

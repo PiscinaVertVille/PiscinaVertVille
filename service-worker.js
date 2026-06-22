@@ -1,4 +1,4 @@
-// Service Worker - Piscina Vert Ville
+// Service Worker - Piscina Vertville
 // Cache básico para permitir instalação como PWA (iOS/Android) e uso offline do shell.
 // Dados (Firestore) nunca são cacheados aqui — sempre online/real-time.
 

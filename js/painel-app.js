@@ -85,7 +85,9 @@ async function iniciarDashboard() {
     const [agendamentosPorData, conflitos, moradores] = await Promise.all([
       agruparAgendamentosPorData(),
       listarAgendamentosEmConflito(),
-      listarMoradoresCadastrados()
+      listarMoradoresCadastrados(),
+      carregarDiasOcupadosPlantao(),
+      carregarBloqueiosManuais()
     ]);
 
     agendamentosPorDataCache = agendamentosPorData;
@@ -169,15 +171,23 @@ function desenharCalendarioPainel() {
     const dataISO = dataParaISO(new Date(ano, mes, dia));
     const temAgendamento = !!(agendamentosPorDataCache[dataISO] && agendamentosPorDataCache[dataISO].length);
     const ehPassado = dataISO < hoje;
+    const ehDiaDisponivel = diaEstaDisponivel(dataISO);
 
     const classes = ["dia-celula"];
-    if (temAgendamento) classes.push("com-agendamento", "disponivel");
+    if (ehDiaDisponivel) {
+      classes.push("disponivel");
+    } else {
+      classes.push("indisponivel");
+    }
+    if (temAgendamento) classes.push("com-agendamento");
     if (ehPassado) classes.push("dia-passado");
     if (dataISO === diaSelecionadoNoPainel) classes.push("selecionado");
 
     grade.innerHTML += `<div class="${classes.join(" ")}" data-data="${dataISO}" tabindex="0">${dia}</div>`;
   }
 
+  // No painel da médica, todos os dias são clicáveis (mesmo indisponíveis,
+  // já que pode haver agendamento antigo marcado num dia que depois virou plantão).
   grade.querySelectorAll(".dia-celula:not(.vazio)").forEach((celula) => {
     celula.addEventListener("click", () => selecionarDiaNoPainel(celula.dataset.data));
   });
@@ -428,11 +438,9 @@ async function atualizarListaBloqueios() {
 function configurarConfiguracoes() {
   document.getElementById("botao-salvar-pagamento").addEventListener("click", async () => {
     await salvarConfigExame({
-      chavePix: document.getElementById("input-chave-pix").value.trim(),
-      nomeRecebedor: document.getElementById("input-nome-recebedor").value.trim(),
       whatsappMedica: document.getElementById("input-whatsapp-medica").value.trim()
     });
-    mostrarToast("Dados de pagamento salvos!");
+    mostrarToast("Contato salvo!");
   });
 
   document.getElementById("botao-salvar-avulso").addEventListener("click", async () => {
@@ -497,8 +505,6 @@ async function carregarTelaConfiguracoes() {
   const config = await obterConfigExame();
   if (!config) return;
 
-  if (config.chavePix) document.getElementById("input-chave-pix").value = config.chavePix;
-  if (config.nomeRecebedor) document.getElementById("input-nome-recebedor").value = config.nomeRecebedor;
   if (config.whatsappMedica) document.getElementById("input-whatsapp-medica").value = config.whatsappMedica;
   if (config.valorAvulso) document.getElementById("input-valor-avulso").value = config.valorAvulso;
   if (config.horarioInicio) document.getElementById("input-horario-inicio-config").value = config.horarioInicio;

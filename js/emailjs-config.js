@@ -1,5 +1,5 @@
 // ==========================================================================
-// CONFIGURAÇÃO EMAILJS — Piscina Vert Ville
+// CONFIGURAÇÃO EMAILJS — Piscina Vertville
 // ==========================================================================
 // Usado para enviar o código de verificação de 6 dígitos no cadastro do morador.
 //
@@ -8,7 +8,7 @@
 // 2. Em "Email Services", conecte seu Gmail (ou outro provedor) — isso gera um SERVICE_ID
 // 3. Em "Email Templates", crie um template novo com este conteúdo de exemplo:
 //
-//      Assunto: Seu código de verificação - Piscina Vert Ville
+//      Assunto: Seu código de verificação - Piscina Vertville
 //      Corpo:
 //        Olá {{nome}},
 //        Seu código de verificação é: {{codigo}}

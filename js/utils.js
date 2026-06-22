@@ -1,5 +1,5 @@
 // ==========================================================================
-// UTILS — Piscina Vert Ville
+// UTILS — Piscina Vertville
 // Funções compartilhadas: datas, geração de slots, formatação, toast.
 // ==========================================================================
 
