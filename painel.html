@@ -39,7 +39,10 @@
             </div>
             <div class="campo">
               <label for="input-senha-medica">Senha</label>
-              <input type="password" id="input-senha-medica" autocomplete="current-password" required />
+              <div class="campo-senha-wrapper">
+                <input type="password" id="input-senha-medica" autocomplete="current-password" required />
+                <button type="button" class="botao-mostrar-senha" data-alvo="input-senha-medica" aria-label="Mostrar senha">👁</button>
+              </div>
             </div>
             <button type="submit" class="botao botao-primario" id="botao-login-medica">Entrar</button>
           </form>

@@ -142,6 +142,25 @@ function emailValido(email) {
 }
 
 /**
+ * Configura todos os botões de "mostrar/ocultar senha" presentes na página.
+ * Cada botão deve ter o atributo data-alvo apontando para o id do input de senha.
+ * Chamar uma vez no carregamento de cada tela (index.html e painel.html).
+ */
+function configurarBotoesMostrarSenha() {
+  document.querySelectorAll(".botao-mostrar-senha").forEach((botao) => {
+    botao.addEventListener("click", () => {
+      const input = document.getElementById(botao.dataset.alvo);
+      if (!input) return;
+
+      const estaMostrando = input.type === "text";
+      input.type = estaMostrando ? "password" : "text";
+      botao.textContent = estaMostrando ? "👁" : "🙈";
+      botao.setAttribute("aria-label", estaMostrando ? "Mostrar senha" : "Ocultar senha");
+    });
+  });
+}
+
+/**
  * Faz o parse de uma lista de datas em texto livre (uma por linha),
  * aceitando "DD/MM/AAAA" ou "AAAA-MM-DD". Ignora linhas vazias/inválidas.
  * Retorna array de datas ISO.

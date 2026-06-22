@@ -24,6 +24,7 @@ function mostrarTela(idTela) {
 
 document.addEventListener("DOMContentLoaded", () => {
   configurarEventosCadastro();
+  configurarBotoesMostrarSenha();
   configurarEventosLogin();
   configurarEventosVerificacao();
   configurarEventosCalendario();

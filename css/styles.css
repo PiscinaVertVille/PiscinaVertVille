@@ -177,6 +177,35 @@ p, label, span, li { font-size: 0.95rem; line-height: 1.5; }
 
 .campo input::placeholder { color: #B7AF9E; }
 
+/* ---------- Campo de senha com botão de mostrar/ocultar ---------- */
+
+.campo-senha-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.campo-senha-wrapper input {
+  padding-right: 46px;
+}
+
+.botao-mostrar-senha {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--cor-grafite-500);
+}
+
+.botao-mostrar-senha:active { opacity: 0.6; }
+
 /* Inputs de código de verificação */
 .codigo-input-grupo {
   display: flex;

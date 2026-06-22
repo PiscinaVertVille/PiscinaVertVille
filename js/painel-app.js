@@ -13,6 +13,7 @@ function mostrarTelaPainel(idTela) {
 
 document.addEventListener("DOMContentLoaded", () => {
   configurarLogin();
+  configurarBotoesMostrarSenha();
   configurarNavegacaoInferior();
   configurarImportacaoPlantoes();
   configurarBloqueios();
@@ -86,6 +87,7 @@ async function iniciarDashboard() {
       agruparAgendamentosPorData(),
       listarAgendamentosEmConflito(),
       listarMoradoresCadastrados(),
+      carregarConfigExame(),
       carregarDiasOcupadosPlantao(),
       carregarBloqueiosManuais()
     ]);
