@@ -102,6 +102,67 @@ async function removerBloqueioManual(bloqueioId) {
   await db.collection("bloqueiosManuais").doc(bloqueioId).delete();
 }
 
+/**
+ * Cria bloqueios recorrentes dentro de um período, gerando um documento
+ * individual por dia (cada um pode depois ser editado/excluído isoladamente).
+ *
+ * tipo: "diaria" (todo dia disponível) | "semanal" (só nos diasDaSemana indicados)
+ * diasDaSemana: array de números 0-6 (0=domingo), usado só quando tipo="semanal"
+ *
+ * Pula automaticamente dias em que ela já está de plantão (diaEstaDisponivel
+ * já considera isso, mas aqui usamos uma checagem mais simples e direta:
+ * dia de plantão = está em cacheDiasOcupadosPlantao).
+ */
+async function criarBloqueiosRecorrentes({ tipo, diasDaSemana, dataInicio, dataFim, horarioInicio, horarioFim, motivo }) {
+  // Garante que o cache de plantões está atualizado antes de decidir o que pular.
+  await carregarDiasOcupadosPlantao();
+
+  const diasParaCriar = [];
+  let dataAtual = dataInicio;
+
+  while (dataAtual <= dataFim) {
+    const diaDaSemanaAtual = new Date(dataAtual + "T00:00:00").getDay();
+    const seEncaixaNoTipo = tipo === "diaria" || (diasDaSemana || []).includes(diaDaSemanaAtual);
+    const estaDePlantao = cacheDiasOcupadosPlantao && cacheDiasOcupadosPlantao.has(dataAtual);
+
+    if (seEncaixaNoTipo && !estaDePlantao) {
+      diasParaCriar.push(dataAtual);
+    }
+
+    dataAtual = somarDias(dataAtual, 1);
+  }
+
+  if (diasParaCriar.length === 0) {
+    return { criados: 0, conflitos: [] };
+  }
+
+  const batch = db.batch();
+  diasParaCriar.forEach((dataISO) => {
+    const novoDoc = db.collection("bloqueiosManuais").doc();
+    batch.set(novoDoc, {
+      data: dataISO,
+      horarioInicio,
+      horarioFim,
+      motivo: motivo || "",
+      origemRecorrente: true,
+      criadoEm: firebase.firestore.FieldValue.serverTimestamp()
+    });
+  });
+  await batch.commit();
+
+  // Verifica conflitos com agendamentos já existentes em qualquer um dos dias criados.
+  let todosConflitos = [];
+  for (const dataISO of diasParaCriar) {
+    const conflitos = await detectarConflitosComBloqueio(dataISO, horarioInicio, horarioFim);
+    todosConflitos = todosConflitos.concat(conflitos);
+  }
+  if (todosConflitos.length > 0) {
+    await marcarAgendamentosEmConflito(todosConflitos);
+  }
+
+  return { criados: diasParaCriar.length, conflitos: todosConflitos };
+}
+
 async function listarBloqueiosManuais() {
   const hoje = hojeISO();
   const snap = await db.collection("bloqueiosManuais")

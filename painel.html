@@ -151,26 +151,92 @@
       </div>
 
       <div class="conteudo">
-        <div class="card">
-          <form id="form-bloqueio">
-            <div class="campo">
-              <label for="input-data-bloqueio">Data</label>
-              <input type="date" id="input-data-bloqueio" required />
-            </div>
-            <div class="campo">
-              <label for="input-inicio-bloqueio">Das</label>
-              <input type="time" id="input-inicio-bloqueio" required />
-            </div>
-            <div class="campo">
-              <label for="input-fim-bloqueio">Até</label>
-              <input type="time" id="input-fim-bloqueio" required />
-            </div>
-            <div class="campo">
-              <label for="input-motivo-bloqueio">Motivo (só você vê)</label>
-              <input type="text" id="input-motivo-bloqueio" placeholder="Ex: compromisso pessoal" />
-            </div>
-            <button type="submit" class="botao botao-primario">Bloquear horário</button>
-          </form>
+
+        <div class="card" style="display:flex; gap:10px;">
+          <button class="botao botao-secundario" id="aba-bloqueio-unico" style="background: var(--cor-petroleo-950); color:white;">Dia único</button>
+          <button class="botao botao-secundario" id="aba-bloqueio-recorrente">Recorrente</button>
+        </div>
+
+        <!-- Bloqueio de dia único (existente) -->
+        <div id="conteudo-bloqueio-unico">
+          <div class="card">
+            <form id="form-bloqueio">
+              <div class="campo">
+                <label for="input-data-bloqueio">Data</label>
+                <input type="date" id="input-data-bloqueio" required />
+              </div>
+              <div class="campo">
+                <label for="input-inicio-bloqueio">Das</label>
+                <input type="time" id="input-inicio-bloqueio" required />
+              </div>
+              <div class="campo">
+                <label for="input-fim-bloqueio">Até</label>
+                <input type="time" id="input-fim-bloqueio" required />
+              </div>
+              <div class="campo">
+                <label for="input-motivo-bloqueio">Motivo (só você vê)</label>
+                <input type="text" id="input-motivo-bloqueio" placeholder="Ex: compromisso pessoal" />
+              </div>
+              <button type="submit" class="botao botao-primario">Bloquear horário</button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Bloqueio recorrente (novo) -->
+        <div id="conteudo-bloqueio-recorrente" class="oculto">
+          <div class="card">
+            <h3>Repetir bloqueio</h3>
+            <p class="texto-secundario" style="margin:4px 0 14px;">
+              Cria um bloqueio em cada dia disponível dentro do período, sem repetir em dias de plantão.
+            </p>
+
+            <form id="form-bloqueio-recorrente">
+              <div class="campo">
+                <label>Quando repetir</label>
+                <div class="slots-grade" id="grade-tipo-recorrencia">
+                  <div class="slot-horario selecionado" data-tipo="diaria">Todo dia</div>
+                  <div class="slot-horario" data-tipo="semanal">Dia da semana</div>
+                </div>
+              </div>
+
+              <div class="campo oculto" id="campo-dias-semana-recorrencia">
+                <label>Quais dias da semana</label>
+                <div class="slots-grade" style="grid-template-columns: repeat(7, 1fr);" id="grade-dias-semana-recorrencia">
+                  <div class="slot-horario" data-dia="0">D</div>
+                  <div class="slot-horario" data-dia="1">S</div>
+                  <div class="slot-horario" data-dia="2">T</div>
+                  <div class="slot-horario" data-dia="3">Q</div>
+                  <div class="slot-horario" data-dia="4">Q</div>
+                  <div class="slot-horario" data-dia="5">S</div>
+                  <div class="slot-horario" data-dia="6">S</div>
+                </div>
+              </div>
+
+              <div class="campo">
+                <label for="input-data-inicio-recorrencia">De</label>
+                <input type="date" id="input-data-inicio-recorrencia" required />
+              </div>
+              <div class="campo">
+                <label for="input-data-fim-recorrencia">Até</label>
+                <input type="date" id="input-data-fim-recorrencia" required />
+              </div>
+              <div class="campo">
+                <label for="input-inicio-recorrencia">Das</label>
+                <input type="time" id="input-inicio-recorrencia" required />
+              </div>
+              <div class="campo">
+                <label for="input-fim-recorrencia">Até</label>
+                <input type="time" id="input-fim-recorrencia" required />
+              </div>
+              <div class="campo">
+                <label for="input-motivo-recorrencia">Motivo (só você vê)</label>
+                <input type="text" id="input-motivo-recorrencia" placeholder="Ex: horário de almoço" />
+              </div>
+
+              <button type="submit" class="botao botao-primario">Criar bloqueios recorrentes</button>
+              <p class="texto-secundario oculto" id="texto-resultado-recorrencia" style="margin-top:10px;"></p>
+            </form>
+          </div>
         </div>
 
         <div class="card">

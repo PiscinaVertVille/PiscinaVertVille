@@ -399,6 +399,124 @@ function configurarBloqueios() {
       mostrarToast("Erro ao bloquear horário.");
     }
   });
+
+  configurarAbasBloqueio();
+  configurarFormularioRecorrente();
+}
+
+function configurarAbasBloqueio() {
+  const abaUnico = document.getElementById("aba-bloqueio-unico");
+  const abaRecorrente = document.getElementById("aba-bloqueio-recorrente");
+
+  abaUnico.addEventListener("click", () => {
+    document.getElementById("conteudo-bloqueio-unico").classList.remove("oculto");
+    document.getElementById("conteudo-bloqueio-recorrente").classList.add("oculto");
+    abaUnico.style.background = "var(--cor-petroleo-950)";
+    abaUnico.style.color = "white";
+    abaRecorrente.style.background = "";
+    abaRecorrente.style.color = "";
+  });
+
+  abaRecorrente.addEventListener("click", () => {
+    document.getElementById("conteudo-bloqueio-recorrente").classList.remove("oculto");
+    document.getElementById("conteudo-bloqueio-unico").classList.add("oculto");
+    abaRecorrente.style.background = "var(--cor-petroleo-950)";
+    abaRecorrente.style.color = "white";
+    abaUnico.style.background = "";
+    abaUnico.style.color = "";
+  });
+}
+
+let tipoRecorrenciaSelecionado = "diaria";
+let diasSemanaSelecionados = [];
+
+function configurarFormularioRecorrente() {
+  document.querySelectorAll("#grade-tipo-recorrencia .slot-horario").forEach((botao) => {
+    botao.addEventListener("click", () => {
+      tipoRecorrenciaSelecionado = botao.dataset.tipo;
+      document.querySelectorAll("#grade-tipo-recorrencia .slot-horario").forEach((b) => b.classList.remove("selecionado"));
+      botao.classList.add("selecionado");
+
+      const campoDias = document.getElementById("campo-dias-semana-recorrencia");
+      if (tipoRecorrenciaSelecionado === "semanal") {
+        campoDias.classList.remove("oculto");
+      } else {
+        campoDias.classList.add("oculto");
+      }
+    });
+  });
+
+  document.querySelectorAll("#grade-dias-semana-recorrencia .slot-horario").forEach((botao) => {
+    botao.addEventListener("click", () => {
+      botao.classList.toggle("selecionado");
+      const dia = Number(botao.dataset.dia);
+      if (diasSemanaSelecionados.includes(dia)) {
+        diasSemanaSelecionados = diasSemanaSelecionados.filter((d) => d !== dia);
+      } else {
+        diasSemanaSelecionados.push(dia);
+      }
+    });
+  });
+
+  document.getElementById("form-bloqueio-recorrente").addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const dataInicio = document.getElementById("input-data-inicio-recorrencia").value;
+    const dataFim = document.getElementById("input-data-fim-recorrencia").value;
+    const horarioInicio = document.getElementById("input-inicio-recorrencia").value;
+    const horarioFim = document.getElementById("input-fim-recorrencia").value;
+    const motivo = document.getElementById("input-motivo-recorrencia").value;
+
+    if (!dataInicio || !dataFim || !horarioInicio || !horarioFim) {
+      mostrarToast("Preencha todos os campos de data e horário.");
+      return;
+    }
+    if (dataFim < dataInicio) {
+      mostrarToast("A data final precisa ser depois da data inicial.");
+      return;
+    }
+    if (tipoRecorrenciaSelecionado === "semanal" && diasSemanaSelecionados.length === 0) {
+      mostrarToast("Escolha pelo menos um dia da semana.");
+      return;
+    }
+
+    const botaoSubmit = e.target.querySelector("button[type=submit]");
+    botaoSubmit.disabled = true;
+    botaoSubmit.innerHTML = '<span class="spinner"></span>';
+
+    try {
+      const resultado = await criarBloqueiosRecorrentes({
+        tipo: tipoRecorrenciaSelecionado,
+        diasDaSemana: diasSemanaSelecionados,
+        dataInicio,
+        dataFim,
+        horarioInicio,
+        horarioFim,
+        motivo
+      });
+
+      const textoResultado = document.getElementById("texto-resultado-recorrencia");
+      textoResultado.classList.remove("oculto");
+
+      if (resultado.criados === 0) {
+        textoResultado.textContent = "Nenhum dia disponível encontrado nesse período (verifique plantões).";
+      } else {
+        textoResultado.textContent = `${resultado.criados} bloqueio(s) criado(s) com sucesso!`;
+        if (resultado.conflitos.length > 0) {
+          mostrarToast(`⚠️ ${resultado.conflitos.length} exame(s) precisam ser remarcados.`);
+        }
+        document.getElementById("form-bloqueio-recorrente").reset();
+        diasSemanaSelecionados = [];
+        document.querySelectorAll("#grade-dias-semana-recorrencia .slot-horario").forEach((b) => b.classList.remove("selecionado"));
+        await atualizarListaBloqueios();
+      }
+    } catch (erro) {
+      mostrarToast("Erro ao criar bloqueios recorrentes.");
+    } finally {
+      botaoSubmit.disabled = false;
+      botaoSubmit.textContent = "Criar bloqueios recorrentes";
+    }
+  });
 }
 
 async function atualizarListaBloqueios() {
